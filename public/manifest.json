@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "NOVA — New Tab",
+  "version": "0.1.0",
+  "description": "A quieter, more intentional place to start your day.",
+  "permissions": ["storage"],
+  "chrome_url_overrides": { "newtab": "index.html" },
+  "background": { "service_worker": "background.js" }
+}
