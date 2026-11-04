@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BookOpen, EyeOff, Moon, Settings2, Sparkles, Type } from 'lucide-react'
+import { BookOpen, EyeOff, LayoutGrid, Moon, Settings2, Sparkles, Type, Library } from 'lucide-react'
 import type { Font, SiteProfile } from '../web/types'
 import { applyProfile, disableAutomatic, enableAutomatic, ensureContent, matchPattern } from '../web/chrome'
 
@@ -106,6 +106,9 @@ export function Popup() {
   const activeStatus = applied ? 'Styling active in this tab' : profile.enabled ? 'Saved profile · not active in this tab' : 'Styling off'
   return <main className="popup">
     <header><div className="brand"><span className="mark"><Sparkles size={16}/></span><strong>NOVA <span>WEB</span></strong></div><span className="local">LOCAL FIRST</span></header>
+    <button className="command-link" disabled={tab?.windowId === undefined} onClick={() => { if (tab?.windowId !== undefined) void chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => setError('Could not open Assistant. Check Chrome side panel support.')) }}><Sparkles size={17}/><span><strong>NOVA Assistant</strong><small>Think through what you’re reading</small></span><span aria-hidden="true">↗</span></button>
+    <button className="command-link" onClick={() => { const id = tab?.id; void chrome.tabs.create({ url: chrome.runtime.getURL(`research.html${id === undefined ? '' : `?tab=${id}`}`) }).catch(() => setError('Could not open Research.')) }}><Library size={17}/><span><strong>Research workspace</strong><small>Collect pages and ideas locally</small></span><span aria-hidden="true">↗</span></button>
+    <button className="command-link" onClick={() => { void chrome.tabs.create({ url: chrome.runtime.getURL('command.html') }).catch(() => setError('Could not open Command Centre.')) }}><LayoutGrid size={17}/><span><strong>Command Centre</strong><small>Organize tabs & workspaces</small></span><span aria-hidden="true">↗</span></button>
     <div className="hero"><span className="eyebrow">YOUR INTERNET, REIMAGINED</span><h1>A little more <em>you.</em></h1><p>Thoughtful controls for the page you’re on.</p></div>
     <section className="site"><div><span className="caption">CURRENT WEBSITE</span><strong title={origin ?? ''}>{loading ? 'Finding your page…' : origin ? new URL(origin).host : 'Unsupported page'}</strong><small>{loading ? 'Checking access' : unsupported ? 'Open a regular HTTP or HTTPS page.' : activeStatus}</small></div><span className={`status ${applied ? 'on' : ''}`}/></section>
     {error && <p className="message error" role="alert">{error}</p>}{notice && <p className="message" role="status">{notice}</p>}

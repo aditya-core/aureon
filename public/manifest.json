@@ -6,7 +6,12 @@
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "tabs",
+    "tabGroups",
+    "sessions",
+    "favicon",
+    "sidePanel"
   ],
   "chrome_url_overrides": {
     "newtab": "index.html"
@@ -21,5 +26,8 @@
   "action": {
     "default_title": "NOVA Web",
     "default_popup": "popup.html"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   }
 }
