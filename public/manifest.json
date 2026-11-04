@@ -1,9 +1,25 @@
 {
   "manifest_version": 3,
-  "name": "NOVA — New Tab",
+  "name": "NOVA \u2014 New Tab",
   "version": "0.1.0",
   "description": "A quieter, more intentional place to start your day.",
-  "permissions": ["storage"],
-  "chrome_url_overrides": { "newtab": "index.html" },
-  "background": { "service_worker": "background.js" }
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "action": {
+    "default_title": "NOVA Web",
+    "default_popup": "popup.html"
+  }
 }

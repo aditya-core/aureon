@@ -41,7 +41,7 @@ test('wallpaper validation restricts file type and size', () => {
 })
 
 test('all background selections produce safe, local styles', () => {
-  for (const background of ['theme', 'solid', 'mist', 'aurora', 'dunes', 'orbit', 'upload'] as const) {
+  for (const background of ['theme', 'solid', 'mist', 'aurora', 'dunes', 'orbit', 'horizon', 'grove', 'upload'] as const) {
     const styles = themeStyles({ ...DEFAULT_PREFERENCES, background }) as Record<string, string>
     assert.ok(styles['--bg'])
     assert.doesNotMatch(styles['--bg'], /https?:\/\//)

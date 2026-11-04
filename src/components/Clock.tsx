@@ -18,18 +18,19 @@ export function Clock({ preferences }: { preferences: UserPreferences }) {
       if (document.hidden) return
       const date = new Date()
       setNow(date)
-      timer = setTimeout(update, 60_000 - (date.getTime() % 60_000) + 20)
+      const period = preferences.showSeconds ? 1000 : 60_000
+      timer = setTimeout(update, period - (date.getTime() % period) + 20)
     }
     document.addEventListener('visibilitychange', update)
     update()
     return () => { if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', update) }
-  }, [])
-  const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', hour12: preferences.clockFormat === '12h' }).format(now)
+  }, [preferences.showSeconds])
+  const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit', ...(preferences.showSeconds ? { second: '2-digit' as const } : {}), hour12: preferences.clockFormat === '12h' }).format(now)
   const date = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(now)
   return <section className="clock" aria-label="Local time and date">
     <div className="date-line"><span className="date-dot" />{date}</div>
     <div className="clock-time">{time}</div>
-    {preferences.greetingEnabled && <h1>{greeting(now.getHours())}<span className="greeting-period">.</span></h1>}
+    {preferences.greetingEnabled && <h1>{greeting(now.getHours())}{preferences.displayName.trim() ? `, ${preferences.displayName.trim()}` : ''}<span className="greeting-period">.</span></h1>}
     <p className="clock-subtitle">Make space for what matters.</p>
   </section>
 }
