@@ -12,10 +12,13 @@ test('built MV3 manifest contains the intended new-tab entry and minimal permiss
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.chrome_url_overrides?.newtab, 'index.html')
   assert.equal(manifest.background?.service_worker, 'background.js')
-  assert.deepEqual(manifest.permissions, ['storage', 'activeTab', 'scripting'])
+  assert.deepEqual(manifest.permissions, ['storage', 'activeTab', 'scripting', 'tabs', 'tabGroups', 'sessions', 'favicon', 'sidePanel'])
   assert.deepEqual(manifest.optional_host_permissions, ['http://*/*', 'https://*/*'])
   assert.equal(manifest.action?.default_popup, 'popup.html')
   await access(resolve(dist, manifest.action.default_popup))
+  await access(resolve(dist, 'command.html'))
+  assert.equal(manifest.side_panel?.default_path, 'sidepanel.html')
+  await access(resolve(dist, 'sidepanel.html')); await access(resolve(dist, 'research.html'))
   for (const asset of ['web/model.js', 'web/appearance.js', 'web/reader.js', 'web/reader.css', 'web/picker.js']) await access(resolve(dist, asset))
   assert.equal(manifest.host_permissions, undefined)
   assert.equal(manifest.content_scripts, undefined)
@@ -65,6 +68,10 @@ test('studio, settings and workspace are outside the initial static bundle', asy
     await access(resolve(dist, manifest[key].file))
   }
   assert.equal(manifest['popup.html']?.isEntry, true)
+  assert.equal(manifest['command.html']?.isEntry, true)
+  for (const key of ['sidepanel.html','research.html']) { assert.equal(manifest[key]?.isEntry, true); assert.ok(!staticImports.has(key), `${key} must not load on the new tab`) }
+  assert.ok(!staticImports.has('command.html'), 'Command Centre must not load in the new-tab entry')
+  assert.ok(!(manifest['popup.html'].imports ?? []).includes('command.html'), 'Command Centre must not load in the popup')
   const popupImports = new Set(manifest['popup.html'].imports ?? [])
   assert.ok(!popupImports.has('index.html'), 'popup must not eagerly load the new-tab entry')
   assert.ok(entry.dynamicImports.includes(settings))
@@ -72,4 +79,16 @@ test('studio, settings and workspace are outside the initial static bundle', asy
   for (const key of tools) assert.ok(manifest[settings].dynamicImports.includes(key), `${key} must be loaded on demand from settings`)
   const html = await read('index.html')
   for (const key of [settings, workspace, ...tools]) assert.ok(!html.includes(manifest[key].file), `${key} must not be preloaded in HTML`)
+})
+
+
+test('extension bundle does not include provider credentials or provider endpoint', async () => {
+  const { readdir } = await import('node:fs/promises')
+  for (const file of await readdir(resolve(dist, 'assets'))) {
+    if (!file.endsWith('.js')) continue
+    const source = await read(`assets/${file}`)
+    assert.doesNotMatch(source, /sk-[A-Za-z0-9_-]{20,}/, `possible provider key in ${file}`)
+    assert.ok(!source.includes('NOVA_PROVIDER_KEY'), `server environment name leaked in ${file}`)
+    assert.ok(!source.includes('api.openai.com'), `direct provider request in ${file}`)
+  }
 })

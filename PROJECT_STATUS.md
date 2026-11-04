@@ -1,7 +1,7 @@
 # Project status
 
 ## Current phase
-Day 5 — NOVA Web implementation is present; real Chrome extension, site compatibility, permission and performance verification are outstanding. Stop after Day 5 and wait for user confirmation before Day 6. Day 3–4 browser/restart verification remains outstanding.
+Days 7–8 — Assistant, separately configured Django backend and local Research workspace implemented; live AI integration and installed-Chrome verification remain incomplete. Do not claim real provider, browser, network, accessibility, restart or performance verification without executing it. Stop after Day 8.
 
 ## Audit and preserved foundation
 - Existing React 19 / strict TypeScript / Vite MV3 new-tab override, search, themes, wallpaper storage, layout presets, settings and idle service worker remain in place. Day 1–4 originally requested only `storage`; Day 5 adds `activeTab`, `scripting` and optional host patterns as described below.
@@ -32,10 +32,29 @@ Day 5 — NOVA Web implementation is present; real Chrome extension, site compat
 - Reader builds an allowlisted text-only DOM, with safe HTTP(S) links and no executable copied HTML; page content is not transmitted or persisted. Picker refuses direct interactive/structural controls and asks before hiding containers with controls.
 - Website transforms are best effort; Shadow DOM, iframes, dynamic page structures, visual contrast and protected pages remain compatibility limitations. `docs/DAY_05_PROMPT.md` preserves a reusable prompt for this phase.
 
+## Day 6 — Command Centre
+- Separate popup-linked extension page; theme panel tokens, responsive tab search, counts, tab selection, switch/confirmed close, duplicate/inactivity/group indicators, keyboard search and native cached favicon endpoint with fallback.
+- Event-driven tab/group/recent updates while open; listeners and deferred updates are cleaned up. Stale initial/refresh snapshots are rejected and retried. No polling, automatic grouping, tab discarding or RAM claims.
+- Native groups can be created, named, recolored, expanded/collapsed, populated or ungrouped explicitly; pinned and cross-window selections are rejected. Suggested labels are manual, not AI categorization.
+- Duplicate keys ignore fragments, preserve queries and schemes, and separate incognito from normal. Closure is confirmed and each URL is rechecked; operations are not atomic with Chrome changes.
+- Local named workspaces save only non-incognito, credential-free HTTP(S) tabs, title, pin and group metadata. Full query strings are sensitive. Restore skips unsupported/already-open URLs, recreates possible groups/pins, confirms over ten tabs and reports partial errors. Up to 50 workspaces of 500 tabs; same-page writes serialized, cross-page writes not atomic.
+- Recently closed uses native `chrome.sessions` and no additional history database. Required new permissions `tabs`, `tabGroups`, `sessions`, `favicon`; no `history` permission, new mandatory website hosts, page-content access, telemetry or server. Existing Day 5 optional hosts remain opt-in. Chrome may present `tabs` as browsing-history access.
+- Known limitations: large lists are not virtualized; activity indicator requires Chrome `lastAccessed`; grouping may partially succeed on errors; restore and duplicate checking cannot be atomic; favicon and API behavior require real Chrome verification.
+
+## Days 7–8 — Assistant and Research
+- Chrome side panel entry and popup launcher; separate, themed, responsive React entry. General chat and source-based summary, explanation, questions and notes use authenticated backend SSE. Streaming, stop, local conversation history/clear, copy, retry and explicit per-request context approval are implemented.
+- Extraction is user-triggered, transient and bounded; skips forms, common hidden and navigation elements, rejects incognito/internal/sensitive heuristics and password fields, strips query/fragment from shared URL, and checks navigation. Sensitive detection, hidden filtering and prompt-injection mitigation cannot guarantee safety. Source is not intentionally persisted, though generated text may repeat it.
+- Backend in `backend/`: Django/DRF account token auth, per-user UTC daily quota, bounded request/context/output, CORS allowlist, streaming, timeouts and server-only provider credentials. OpenAI adapter is implemented; no deployed server or live provider has been tested. Token provisioning and production infrastructure are operator responsibilities. See `docs/AI_BACKEND.md`.
+- Local IndexedDB research collections, saved pages, title/URL/tag/note search, personal notes, related pages, duplicate detection and explicit AI knowledge-card preview/save. Plaintext data is not encrypted or backed up. No semantic search. Simultaneous research pages do not live-sync, and editing the same record concurrently is last-writer-wins.
+- Permission added: `sidePanel`. Existing `activeTab`, `scripting` and optional host permissions are reused. Backend origin is requested only on user Connect; account token lives in session storage, not the server provider key. Chrome may need renewed `activeTab` access for source capture.
+- Known gaps: real side-panel opening, Chrome permissions, CORS, favicon behavior, live AI/provider output, browser restart, network/console, keyboard/contrast and resource measurements are not verified here. Stop/cancellation is best-effort upstream; model-generated JSON may be invalid and requires retry. Chrome page and private-site heuristics cannot detect all sensitive data.
+
 ## Verification
+- Days 7–8: 93 JavaScript unit/jsdom/mocked-Chrome tests passed, 6 Django tests passed with a fake provider, production build and 5 package checks passed; `npm audit` reported 0 vulnerabilities. These do not verify an installed extension or real AI provider.
 - Day 1–4 baseline before edits: 43 automated tests, build, 4 package checks passed; npm audit 0 vulnerabilities.
 - Day 5: 62 automated unit/jsdom/mocked-Chrome tests passed and cover popup behavior, selector validation, reader extraction/sanitization, CSS cleanup, origin isolation, permission denial/registration, and worker messages. These are not actual browser extension tests.
-- Production build and package checks pass; `npm audit` reports 0 vulnerabilities. Vite output: new-tab entry 28.44 KB / 9.95 KB gzip plus shared React chunk 226.39 KB / 70.38 KB gzip; popup entry 12.61 KB / 4.26 KB gzip plus the same shared chunk. The popup also loads its CSS and local model script. These are build sizes, not RAM/CPU measurements.
+- Day 6: 79 automated unit/jsdom/mocked-Chrome tests passed (including model, privacy, grouping, duplicate revalidation, storage, restore, UI confirmations, browser events and cleanup); production build and 4 package checks pass; `npm audit` reports 0 vulnerabilities. These are not installed-Chrome tests.
+- Day 5 production build and package checks passed; `npm audit` reports 0 vulnerabilities. Vite output: new-tab entry 28.44 KB / 9.95 KB gzip plus shared React chunk 226.39 KB / 70.38 KB gzip; popup entry 12.61 KB / 4.26 KB gzip plus the same shared chunk. The popup also loads its CSS and local model script. These are build sizes, not RAM/CPU measurements.
 - No real website category has been tested in Chrome in this environment. Installed-extension behavior, permission prompts/revocation, site compatibility, browser restart, accessibility, network activity and CPU/memory profiling remain unverified; follow the README matrix.
 
 ## Architectural decisions
@@ -61,6 +80,6 @@ Day 5 — NOVA Web implementation is present; real Chrome extension, site compat
 - Profiles are explicit snapshots; editing the current look does not automatically update a saved profile. All profiles reference the same single uploaded wallpaper. Export does not include the uploaded image; applying an upload-based profile or import on a device without it falls back to the theme background.
 
 ## Next steps
-1. Build and reload the unpacked extension in Chrome; follow the Day 5, Day 4 and Day 3 checklists in README.
-2. Inspect Console and Network, test browser restart and profile CPU/memory on ordinary hardware.
-3. Fix reported problems and obtain confirmation before Day 6.
+1. Provision the backend and a real provider account as documented; test live streaming and quotas without exposing secrets.
+2. Load the extension in Chrome and follow the Days 7–8 and prior manual matrices; inspect Console, Network, restart and resource use.
+3. Fix any reported issues and obtain confirmation before Day 9.

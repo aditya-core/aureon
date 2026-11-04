@@ -1,6 +1,6 @@
 # NOVA
 
-A local-first Chrome New Tab extension. Day 5 adds opt-in website controls to the existing New Tab Personalisation Studio and productivity workspace. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verification and limitations.
+A local-first Chrome New Tab extension. Days 7–8 add an opt-in AI side panel and local research workspace alongside the existing Command Centre, New Tab Personalisation Studio, productivity workspace and website controls. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verification and limitations.
 
 ## Development
 
@@ -18,7 +18,7 @@ The package check verifies built extension files; it does not replace a real Chr
 
 ## Lightweight architecture
 
-The new-tab entry loads the settings shell only when Personalize is opened. Advanced Studio, layout controls, profiles and transfer load when their respective sections are selected; workspace widgets load when one is visible. Wallpaper IndexedDB is opened only when an uploaded background is selected or settings needs the saved image. The MV3 service worker is event-driven, with no polling; website scripts run only on explicit current-tab action or a separately granted site. The build-manifest package test checks the chunk boundaries; it is not a substitute for measuring CPU, memory or startup in Chrome.
+The new-tab entry loads the settings shell only when Personalize is opened. Advanced Studio, layout controls, profiles and transfer load when their respective sections are selected; workspace widgets load when one is visible. Wallpaper IndexedDB is opened only when an uploaded background is selected or settings needs the saved image. The Command Centre is a separate entry loaded only when opened; browser events update its view while it is open. The MV3 service worker is event-driven, with no polling; website scripts run only on explicit current-tab action or a separately granted site. The build-manifest package test checks the chunk boundaries; it is not a substitute for measuring CPU, memory or startup in Chrome.
 
 ## Load or update in Chrome
 
@@ -26,6 +26,51 @@ The new-tab entry loads the settings shell only when Personalize is opened. Adva
 2. Open `chrome://extensions` and enable **Developer mode**.
 3. For a first install choose **Load unpacked**, then select this project's `dist` folder. If already installed, click NOVA's **reload** button after rebuilding.
 4. Open a fresh new tab. If Chrome asks you to keep the new-tab change, confirm it.
+
+## Days 7–8 — Assistant and Research
+
+Open the NOVA toolbar popup on a page → **NOVA Assistant** to open Chrome’s side panel, or **Research workspace** to open your local library. The existing dashboard, website controls and Command Centre remain separate. The side panel and research workspace load only when opened.
+
+**AI is not live out of the box.** A separately configured Django backend, authenticated account token and server-side provider key are required. Full setup, environment variables, API contract and security/deployment limitations are in [docs/AI_BACKEND.md](docs/AI_BACKEND.md). No live provider call or installed Chrome run has been verified here. Without a backend, requests show an error rather than a pretend AI response; local research still works.
+
+In Assistant, choose a suggested prompt or use **Page context** / **Selection**, review the extracted text, and explicitly approve sharing it for each request. General chat is clearly labelled and sends no page context. The settings panel configures a 1,000–24,000-character context limit and your backend connection. The extension filters common sensitive sites and password pages, excludes private tabs and common hidden/form/navigation content, and strips URL query/fragment from shared context. These are best-effort safeguards: **review everything**, because sensitive-page/hidden-data detection and prompt-injection resistance cannot be guaranteed. Ask a follow-up after approving the same context again, stop a stream, copy an answer, or clear local conversation history. User messages and AI answers are stored locally; a generated answer could repeat source content.
+
+Research stores collections, pages, descriptions, tags, personal notes, links between sources and approved AI cards in a separate local IndexedDB database. Open Research from the popup on the page you want to save, then select **Save current page**. Full saved URLs can include sensitive query strings. Search is local text matching, not semantic search. To create a knowledge card, keep the saved page open, explicitly request extraction, review/approve sharing, then review and save the returned card. Chrome may require you to click NOVA on that source page again to grant temporary `activeTab` access. If no backend is configured, there is no AI card; saved pages and notes remain usable. Deleting a collection moves its pages to Unfiled.
+
+Day 7 adds the `sidePanel` permission. Existing `activeTab`/`scripting` are used for user-triggered page extraction; the backend origin uses the existing optional host-permission mechanism and is requested only on Connect. No `history` permission or new mandatory website access is requested. The account token is kept in session storage until browser restart; the provider API key stays only on the backend. IndexedDB and local chat data are not encrypted by NOVA and are not synced or backed up by this feature.
+
+### Manual testing — not yet executed here
+
+1. Build and reload `dist`; review permissions. On an ordinary article, open Assistant, use general chat and each suggested action. Check extraction previews, per-request consent, URL query stripping, selection, follow-up context, clear history, retry, stop and network errors. Check internal, password, private and obviously sensitive pages are blocked. Never use real secrets in tests.
+2. Configure your backend as described in [docs/AI_BACKEND.md](docs/AI_BACKEND.md); verify the Chrome permission prompt, authentication, streaming, failed provider credentials and per-user limit. Inspect requests and server logs safely. Exercise both light/dark themes and narrow side-panel widths, keyboard and reduced motion.
+3. From a normal page open Research and save it, add collections, tags, notes and related sources, search, try duplicates and reload Chrome. With a configured backend, preview and generate a card, cancel, review and save; verify no source text is stored as a page snapshot. Test quota/storage errors and large collections.
+4. Regression-test Days 1–6, including popup, settings, widgets and Command Centre. Inspect Console and Network and profile idle/active CPU and memory. Cross-window research edits, real Chrome browser APIs, live provider behavior and performance remain unverified by the mocks.
+
+## Day 6 — Command Centre
+
+Click the NOVA toolbar icon → **Command Centre**. It opens as a separate extension tab. Search by title or URL; `/` or Ctrl/Cmd+K focuses search, Escape clears it. Select tabs to create a native group or save a workspace. Switch to a tab or close it individually (closing asks for confirmation). The selected theme’s panel colors are used; wallpapers are not loaded on this page.
+
+- **Groups:** select unpinned tabs in the same window, then use Tab groups to create a named/color group, add to an existing group or ungroup; rename, recolor and collapse/expand Chrome groups. The Work, Study, Research, Entertainment, Shopping and Personal names are suggestions, not automatic categorization. Chrome controls group behavior and pinned tabs cannot join a group.
+- **Duplicates:** review HTTP(S) pages with the same normalized URL ignoring fragments. Queries are preserved, and HTTP and HTTPS are distinct. Normal and incognito tabs are never compared together. Pick the tab to keep and confirm; NOVA rechecks live URLs before closing the others. No tabs close automatically.
+- **Workspaces:** name and save the current window or selected tabs. Only non-incognito HTTP(S) URLs without embedded credentials are saved, along with titles, pinned state and available native-group names/colors. Explicitly saved URLs include their query strings, which may contain sensitive information; they stay in `chrome.storage.local` on this device. Up to 50 workspaces and 500 tabs per workspace are supported. Details lets you select individual tabs to restore, and workspaces can be renamed or deleted. Restore opens in the current **normal** window, skips unsupported URLs and normalized URLs already open in any normal window or already restored, and asks before attempting more than 10 tabs. It reports opened, skipped and failed operations; a group operation can fail after its tabs have opened. Identically named native groups are kept distinct when captured.
+- **Recently closed:** lists up to 25 entries from Chrome’s native `sessions` API, not a separate history database; select Restore to use Chrome’s own recovery. Availability and retention are controlled by Chrome.
+- **Performance:** tabs and groups are updated by browser events while the page is open; there is no polling, automatic discarding or claimed RAM saving. Inactive means a non-active tab whose Chrome `lastAccessed` timestamp is at least 30 minutes old; browsers that do not provide this field cannot show that indicator. Chrome’s local favicon endpoint is used with a fallback; no direct third-party favicon service is used by this view.
+
+### Day 6 permissions and privacy
+
+The existing `storage`, `activeTab`, `scripting`, and optional per-site HTTP(S) permissions remain. Day 6 adds `tabs` to read titles and URLs of open tabs, `tabGroups` for native group controls, `sessions` for Chrome's recently closed list/restore, and `favicon` for Chrome’s cached extension favicon endpoint. Chrome may describe the `tabs` permission as access to browsing history and may ask you to review permissions on upgrade; NOVA does not request the `history` permission or build a browsing-history database. These permissions do not add a mandatory HTTP(S) host grant or access webpage content. Saved workspaces are local and never include incognito tabs, but their titles and full URLs can be sensitive. Open tab metadata and native recent sessions are read only while Command Centre is open. Day 6 itself sends nothing to a NOVA server. Day 7 adds an optional backend for explicitly requested AI; see below.
+
+### Day 6 manual Chrome matrix — **not yet executed here**
+
+1. Build with `npm ci && npm run build`; reload or load unpacked `dist` in `chrome://extensions` and review Chrome’s new permission prompt. Open toolbar popup on a normal and protected page and open Command Centre. Check Days 1–5 still work.
+2. In multiple windows open HTTP(S), pinned and internal pages; search title and URL, use `/` and Ctrl/Cmd+K, select, switch, cancel/confirm close, and test narrow widths, keyboard focus and reduced motion. Check tab/group counts and event updates when another window opens, moves, groups or closes tabs.
+3. Select tabs in one window, create a suggested and a custom group; rename, change color, collapse/expand, add and ungroup. Try pinned and cross-window selections and check errors rather than unintended grouping.
+4. Open same URLs with differing fragments, differing queries and HTTP versus HTTPS; review and change the keep choice. Cancel and confirm closing, and navigate a tab before confirmation to test revalidation. If extension incognito access is enabled, verify private and normal duplicates are separate.
+5. Save a current window and a selection with pinned, grouped, private and unsupported tabs. Check private/internal URLs were skipped; reload/restart Chrome, rename and delete a workspace. Restore all and selected, check deduplication, pinned/groups and the >10 confirmation. Test unavailable tabs, permission/storage failures where practical and partial-result messages.
+6. Close a tab and window and use Recently closed to restore them; compare availability to Chrome’s own list. Test denial/revocation of the separately optional Day 5 host permission.
+7. Inspect extension page, popup and service-worker DevTools Console and Network; profile CPU/memory on representative tab counts, both idle and during updates. Verify favicon behavior and confirm no unexpected remote requests. Measurements and browser accessibility/compatibility are not established by the automated mocks.
+
+Known constraints: workspace writes are serialized within one Command Centre but are not atomic across multiple Command Centre pages; avoid concurrent edits. Restoring and duplicate closing involve separate Chrome API calls and cannot be perfectly atomic against external browser changes. Group creation can partially succeed if the subsequent rename/color update fails. Large tab lists are rendered rather than virtualized, so responsiveness with very large tab counts is unmeasured. Native Chrome APIs, favicons, permission prompts, restart persistence and actual resource use require the manual matrix above.
 
 ## Day 5 — NOVA Web
 
@@ -40,7 +85,7 @@ Open a normal HTTP(S) page and click the NOVA extension icon (pin it from Chrome
 - `storage` stores preferences locally. `activeTab` provides temporary access after clicking the extension; `scripting` applies bundled scripts/CSS to that tab.
 - Optional HTTP(S) host patterns are declared so Chrome can prompt later, but **no host is granted by default**. Enable **Apply automatically on this site** to request access to the selected scheme and host; accept or deny Chrome’s prompt. Chrome host patterns cover all ports of that host, even though profiles are keyed by origin. To avoid silently widening a non-default port, automatic access is unavailable for custom-port origins; temporary current-tab access remains available.
 - Turning off automatic access unregisters the site script and requests permission removal. Already-applied current-tab styling remains until NOVA is disabled or the tab navigates. Resetting the site revokes automatic access and restores its styling.
-- NOVA stores selected origins, settings and user-selected selectors, not full URLs, article text or a browsing history. Those origin/selector records can still reveal which sites you customized. No page contents are transmitted to NOVA servers; there are no such servers in this implementation.
+- NOVA Web stores selected origins, settings and user-selected selectors, not full URLs, article text or a browsing history. The separately requested Day 6 workspaces do store the full URLs and titles of tabs you explicitly save, as described above. Those origin/selector records can still reveal which sites you customized. Day 5 does not transmit page contents; Day 7 AI can send reviewed content to a configured backend only when explicitly approved.
 - Chrome internal pages, Chrome Web Store and other browser-protected pages cannot be modified. Restricted pages or enterprise policy may also reject script injection.
 
 ### Manual Chrome matrix — **not yet executed here**

@@ -15,15 +15,17 @@ vm.runInContext(readFileSync('public/web/model.js', 'utf8'), dom.getInternalVMCo
 Object.defineProperty(globalThis, 'NovaWebModel', { value: (dom.window as any).NovaWebModel, configurable: true })
 const data: Record<string, any> = {}; const messages: any[] = []; const scripts: any[] = []; const requests: any[] = []
 let url = 'https://example.com/story'; let grant = false
+const opened: any[] = []
 Object.defineProperty(globalThis, 'chrome', { configurable: true, value: {
-  tabs: { query: async () => [{ id: 8, url }], sendMessage: async (_id: number, msg: any) => { messages.push(msg); return msg.type === 'NOVA_WEB_STATUS' ? { active: false } : { active: true } } },
+  runtime: { getURL: (path: string) => `chrome-extension://id/${path}` },
+  tabs: { create: async (value: any) => { opened.push(value) }, query: async () => [{ id: 8, url }], sendMessage: async (_id: number, msg: any) => { messages.push(msg); return msg.type === 'NOVA_WEB_STATUS' ? { active: false } : { active: true } } },
   storage: { local: { get: async (key: string) => ({ [key]: data[key] }), set: async (value: any) => Object.assign(data, value) } },
   permissions: { contains: async () => false, request: async (value: any) => { requests.push(value); return grant } },
   scripting: { executeScript: async (params: any) => { scripts.push(params) } },
 } })
 const { render, fireEvent, waitFor, cleanup } = await import('@testing-library/react')
 const { Popup } = await import('../src/popup/popup')
-afterEach(() => { cleanup(); for (const key of Object.keys(data)) delete data[key]; messages.length = 0; scripts.length = 0; requests.length = 0; url = 'https://example.com/story'; grant = false })
+afterEach(() => { cleanup(); for (const key of Object.keys(data)) delete data[key]; messages.length = 0; scripts.length = 0; requests.length = 0; opened.length = 0; url = 'https://example.com/story'; grant = false })
 
 test('popup enables dark styling for only the current origin on user action', async () => {
   const view = render(createElement(Popup))
@@ -64,4 +66,13 @@ test('a saved profile can be explicitly reapplied after navigation without host 
   fireEvent.click(view.getByRole('button', { name: 'Apply saved styling to this tab' }))
   await view.findByText('Styling active in this tab')
   assert.equal(requests.length, 0)
+})
+
+
+test('command centre is accessible from the popup even on unsupported pages', async () => {
+  url = 'chrome://settings'
+  const view = render(createElement(Popup))
+  await view.findByText('Unsupported page')
+  fireEvent.click(view.getByRole('button', { name: /Command Centre/ }))
+  await waitFor(() => assert.deepEqual(opened, [{ url: 'chrome-extension://id/command.html' }]))
 })
