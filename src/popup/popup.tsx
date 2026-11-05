@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { BookOpen, EyeOff, LayoutGrid, Moon, Settings2, Sparkles, Type, Library, Zap } from 'lucide-react'
 import type { Font, SiteProfile } from '../web/types'
 import { applyProfile, disableAutomatic, enableAutomatic, ensureContent, matchPattern } from '../web/chrome'
+import { useMotionLevel } from '../lib/motion'
 
 const M = globalThis.NovaWebModel
 function Toggle({ label, detail, checked, disabled, onChange }: { label: string; detail: string; checked: boolean; disabled: boolean; onChange: (checked: boolean) => void }) {
   return <label className="toggle"><span><strong>{label}</strong><small>{detail}</small></span><input type="checkbox" checked={checked} disabled={disabled} onChange={e => onChange(e.target.checked)}/></label>
 }
 export function Popup() {
+  const motion = useMotionLevel()
   const [tab, setTab] = useState<chrome.tabs.Tab | null>(null)
   const [origin, setOrigin] = useState<string | null>(null)
   const [profile, setProfile] = useState<SiteProfile>(() => M.defaults())
@@ -104,7 +106,7 @@ export function Popup() {
   }
   const noActions = loading || unsupported || busy
   const activeStatus = applied ? 'Styling active in this tab' : profile.enabled ? 'Saved profile · not active in this tab' : 'Styling off'
-  return <main className="popup">
+  return <main className="popup" data-motion={motion}>
     <header><div className="brand"><span className="mark"><Sparkles size={16}/></span><strong>NOVA <span>WEB</span></strong></div><span className="local">LOCAL FIRST</span></header>
     <div className="hero"><span className="eyebrow">YOUR INTERNET, REIMAGINED</span><h1>A little more <em>you.</em></h1><p>Thoughtful controls for the page you’re on.</p></div>
     <section className="popup-spaces" aria-label="NOVA spaces"><div className="popup-spaces-title"><span>OPEN A SPACE</span><small>Choose where to begin</small></div><div className="popup-space-grid">

@@ -329,3 +329,19 @@ test('a selected uploaded wallpaper is loaded without opening settings', async (
     else Reflect.deleteProperty(globalThis, 'indexedDB')
   }
 })
+
+test('the dashboard root exposes the stored motion level for the CSS motion scale', async () => {
+  const { default: App } = await import('../src/App')
+  data.preferences = { ...DEFAULT_PREFERENCES, animationIntensity: 'expressive' }
+  const first = render(createElement(App))
+  await waitFor(() => assert.equal(first.container.querySelector('.app')?.getAttribute('data-motion'), 'expressive'))
+  first.unmount()
+  // Reduced motion wins over the chosen intensity, so the CSS scale collapses to zero.
+  data.preferences = { ...DEFAULT_PREFERENCES, animationIntensity: 'expressive', reducedMotion: true }
+  const second = render(createElement(App))
+  await waitFor(() => assert.equal(second.container.querySelector('.app')?.getAttribute('data-motion'), 'off'))
+  second.unmount()
+  data.preferences = { ...DEFAULT_PREFERENCES, animationIntensity: 'off' }
+  const third = render(createElement(App))
+  await waitFor(() => assert.equal(third.container.querySelector('.app')?.getAttribute('data-motion'), 'off'))
+})

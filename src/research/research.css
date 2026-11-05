@@ -2,3 +2,12 @@
 .r-backup{margin-top:28px;border:1px solid var(--edge);border-radius:12px;padding:16px 20px;background:var(--panel)}.r-backup summary{cursor:pointer;font-size:12px;font-weight:650}.r-backup p,.r-backup small{color:var(--panel-muted);font-size:11px;line-height:1.6}.r-backup .r-actions{margin:12px 0}.r-file{display:inline-flex;align-items:center;gap:6px;font-size:11px;border:1px solid var(--edge);background:var(--soft);border-radius:9px;padding:10px 12px;cursor:pointer}.r-file:focus-within{outline:2px solid var(--panel-accent);outline-offset:3px}.r-file.disabled{opacity:.45;cursor:not-allowed}.r-file input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;padding:0}
 .r-intro-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.r-source,.r-form-hint{font-size:11px;color:var(--panel-muted);line-height:1.55}.r-source{margin:14px 0 0;overflow-wrap:anywhere}.r-form-hint{margin:10px 0}.r-intro-actions button:not(.r-primary){font-size:11px}
 @media(max-width:700px){.r-intro-actions button{margin-top:18px}}
+
+/* Research motion: framed cards lift 1px, panels appear in one short step. */
+.research-shell button,.research-shell input,.research-shell select,.research-shell textarea,.research-shell summary{transition:background-color var(--nova-t-fast) var(--nova-ease),border-color var(--nova-t-fast) var(--nova-ease),color var(--nova-t-fast) var(--nova-ease),transform var(--nova-t-fast) var(--nova-ease-out)}
+.research-shell .r-card{transition:border-color var(--nova-t-fast) var(--nova-ease),box-shadow var(--nova-t-base) var(--nova-ease),transform var(--nova-t-fast) var(--nova-ease-out)}
+.research-shell .r-card:hover{border-color:color-mix(in srgb,var(--panel-accent) 45%,transparent);box-shadow:0 10px 26px #0003;transform:translateY(-2px)}
+.r-search{transition:border-color var(--nova-t-fast) var(--nova-ease),background-color var(--nova-t-fast) var(--nova-ease)}
+.r-search:focus-within{border-color:var(--panel-accent)}
+.r-detail,.r-backup,.r-intro{animation:r-appear var(--nova-t-enter) var(--nova-ease-out) both}
+@keyframes r-appear{from{opacity:0;transform:translateY(var(--nova-rise))}to{opacity:1;transform:none}}

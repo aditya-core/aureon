@@ -10,13 +10,20 @@ import { SessionsPanel } from './components/SessionsPanel'
 import { RecoveryPanel } from './components/RecoveryPanel'
 import { getPreferences } from '../lib/storage'
 import { DEFAULT_PREFERENCES } from '../lib/defaults'
+import { motionLevel, subscribeToPreferences } from '../lib/motion'
 import { themeStyles } from '../lib/theme-engine'
 
 type View = 'tabs' | 'groups' | 'duplicates' | 'sessions' | 'recent'
 export function Command() {
   const { tabs, groups, recent, windowId, ready, error, refresh, available } = useBrowser()
   const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES)
-  useEffect(() => { let active = true; getPreferences().then(p => { if (active) setPreferences(p) }).catch(() => {}); return () => { active = false } }, [])
+  useEffect(() => {
+    let active = true
+    const load = () => { getPreferences().then(p => { if (active) setPreferences(p) }).catch(() => {}) }
+    load()
+    const stop = subscribeToPreferences(load)
+    return () => { active = false; stop() }
+  }, [])
   const [view, setView] = useState<View>('tabs')
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Set<number>>(() => new Set())
@@ -48,7 +55,7 @@ export function Command() {
   const navigation: { id: View; label: string; icon: typeof LayoutGrid; count?: number }[] = [
     { id: 'tabs', label: 'All tabs', icon: LayoutGrid, count: tabs.length }, { id: 'groups', label: 'Tab groups', icon: Boxes, count: groups.length }, { id: 'duplicates', label: 'Duplicates', icon: Copy, count: duplicateGroups.reduce((n, group) => n + group.length - 1, 0) }, { id: 'sessions', label: 'Workspaces', icon: FolderOpen }, { id: 'recent', label: 'Recently closed', icon: Clock3, count: recent.length },
   ]
-  return <div className="command-shell" style={themeStyles(preferences)}><aside className="sidebar"><a href="./index.html" className="command-brand"><span className="brand-mark"><Sparkles size={18}/></span><span>NOVA <small>COMMAND CENTRE</small></span></a><div className="sidebar-label">YOUR SPACE</div><nav aria-label="Command Centre sections">{navigation.map(item => <button key={item.id} className={view === item.id ? 'nav-active' : ''} aria-current={view === item.id ? 'page' : undefined} onClick={() => setView(item.id)}><item.icon size={17}/><span>{item.label}</span>{item.count !== undefined && <small>{item.count}</small>}</button>)}</nav><div className="sidebar-note"><span>✳</span><strong>A clearer browser.</strong><p>Everything here stays yours. Nothing is closed or saved without you.</p></div></aside>
+  return <div className="command-shell" data-motion={motionLevel(preferences)} style={themeStyles(preferences)}><aside className="sidebar"><a href="./index.html" className="command-brand"><span className="brand-mark"><Sparkles size={18}/></span><span>NOVA <small>COMMAND CENTRE</small></span></a><div className="sidebar-label">YOUR SPACE</div><nav aria-label="Command Centre sections">{navigation.map(item => <button key={item.id} className={view === item.id ? 'nav-active' : ''} aria-current={view === item.id ? 'page' : undefined} onClick={() => setView(item.id)}><item.icon size={17}/><span>{item.label}</span>{item.count !== undefined && <small>{item.count}</small>}</button>)}</nav><div className="sidebar-note"><span>✳</span><strong>A clearer browser.</strong><p>Everything here stays yours. Nothing is closed or saved without you.</p></div></aside>
     <main className="command-main"><header className="topline"><div><span className="top-dot"/> YOUR BROWSER, IN BALANCE</div><button onClick={() => void refresh()} disabled={!ready || busy}><RefreshCw size={14}/> Refresh</button></header><div className="main-content"><div className="page-intro"><div><span className="kicker">A LITTLE MORE CLARITY, EVERY DAY</span><h1>Make room to <em>think.</em></h1><p>A quieter place to organize the tabs, ideas, and work you want to return to.</p></div><div className="intro-symbol" aria-hidden="true">✳</div></div>
       <div className="stats"><div><span>OPEN TABS</span><strong>{tabs.length}</strong><small>Across {windows} {windows === 1 ? 'window' : 'windows'}</small></div><div><span>YOUR GROUPS</span><strong>{groups.length}</strong><small>Native Chrome groups</small></div><div><span>EXTRA DUPLICATES</span><strong>{duplicateGroups.reduce((n,g) => n + g.length - 1, 0)}</strong><small>Ready for review</small></div></div>
       {(error || feedback) && <p className={`feedback ${error || feedback?.error ? 'error' : ''}`} role={error || feedback?.error ? 'alert' : 'status'}>{error || feedback?.text}</p>}

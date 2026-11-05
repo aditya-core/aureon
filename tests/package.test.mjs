@@ -59,6 +59,7 @@ test('studio, settings and workspace are outside the initial static bundle', asy
   const settings = 'src/components/settings/Settings.tsx'
   const workspace = 'src/components/Workspace.tsx'
   const tabspace = 'src/tabspace/entry.tsx'
+  const switcher = 'src/switcher/entry.tsx'
   const tools = ['AdvancedStudio', 'LayoutStudio', 'Profiles', 'Transfer'].map(name => `src/components/settings/${name}.tsx`)
   const staticImports = new Set()
   function visit(key) {
@@ -68,7 +69,7 @@ test('studio, settings and workspace are outside the initial static bundle', asy
     for (const dependency of manifest[key].imports ?? []) visit(dependency)
   }
   visit('index.html')
-  for (const key of [settings, workspace, tabspace, ...tools]) {
+  for (const key of [settings, workspace, tabspace, switcher, ...tools]) {
     assert.equal(manifest[key]?.isDynamicEntry, true, `${key} must be a separate dynamic entry`)
     assert.ok(!staticImports.has(key), `${key} is eagerly loaded by the initial entry`)
     await access(resolve(dist, manifest[key].file))
@@ -83,9 +84,10 @@ test('studio, settings and workspace are outside the initial static bundle', asy
   assert.ok(entry.dynamicImports.includes(settings))
   assert.ok(entry.dynamicImports.includes(workspace))
   assert.ok(entry.dynamicImports.includes(tabspace))
+  assert.ok(entry.dynamicImports.includes(switcher))
   for (const key of tools) assert.ok(manifest[settings].dynamicImports.includes(key), `${key} must be loaded on demand from settings`)
   const html = await read('index.html')
-  for (const key of [settings, workspace, tabspace, ...tools]) assert.ok(!html.includes(manifest[key].file), `${key} must not be preloaded in HTML`)
+  for (const key of [settings, workspace, tabspace, switcher, ...tools]) assert.ok(!html.includes(manifest[key].file), `${key} must not be preloaded in HTML`)
 })
 
 
@@ -105,4 +107,26 @@ test('workflow editor is loaded on demand from the Automations page', async () =
   const manifest = JSON.parse(await read('.vite/manifest.json'))
   assert.equal(manifest['src/automation/WorkflowEditor.tsx']?.isDynamicEntry, true)
   assert.ok(manifest['automations.html'].dynamicImports.includes('src/automation/WorkflowEditor.tsx'))
+})
+
+test('every extension page loads the shared motion layer before its own styles', async () => {
+  const pages = ['index.html', 'command.html', 'automations.html', 'research.html', 'sidepanel.html', 'popup.html']
+  let shared = ''
+  for (const page of pages) {
+    const html = await read(page)
+    const hrefs = [...html.matchAll(/<link\b[^>]*\bhref="([^"]+\.css)"/gi)].map(match => match[1])
+    assert.equal(hrefs.length, 2, `${page} should load the motion layer plus one page stylesheet`)
+    const motion = hrefs[0]
+    assert.match(motion, /(^|\/)motion-[^/]+\.css$/, `${page} does not load the shared motion layer first`)
+    assert.ok(!/motion-/.test(hrefs[1]), `${page} loads motion styles twice`)
+    if (shared) assert.equal(motion, shared, 'pages should share one motion stylesheet')
+    shared = motion
+    await access(resolve(dist, motion.replace(/^\.\//, '')))
+  }
+  const css = await read(shared.replace(/^\.\//, ''))
+  assert.match(css, /--nova-motion-scale:1/)
+  assert.match(css, /--nova-t-fast:calc\(\.1s \* var\(--nova-motion-scale\)\)/)
+  assert.match(css, /\[data-motion=off\]/)
+  assert.match(css, /prefers-reduced-motion:reduce/)
+  assert.ok(!/transition:all/.test(css), 'the motion layer must not blanket-transition every property')
 })

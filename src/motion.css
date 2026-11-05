@@ -1,0 +1,32 @@
+/* NOVA motion layer: one timing scale and one easing family for every surface.
+   Durations stay short (100–300ms) so interactions feel immediate rather than animated;
+   the `animationIntensity` preference stretches the same tokens instead of inventing new motion. */
+:root{
+  --nova-ease:cubic-bezier(.2,.8,.2,1);
+  --nova-ease-out:cubic-bezier(.16,1,.3,1);
+  --nova-ease-in-out:cubic-bezier(.4,0,.2,1);
+  --nova-ease-spring:cubic-bezier(.3,1.2,.5,1);
+  --nova-motion-scale:1;
+  --nova-rise:6px;
+  --nova-t-fast:calc(100ms * var(--nova-motion-scale));
+  --nova-t-base:calc(150ms * var(--nova-motion-scale));
+  --nova-t-slow:calc(220ms * var(--nova-motion-scale));
+  --nova-t-enter:calc(300ms * var(--nova-motion-scale));
+  --nova-t-exit:calc(130ms * var(--nova-motion-scale));
+}
+[data-motion="standard"]{--nova-motion-scale:1.2}
+[data-motion="expressive"]{--nova-motion-scale:1.45;--nova-rise:9px}
+[data-motion="off"]{--nova-motion-scale:0}
+
+/* Controls share a curve, so a state change reads the same in every NOVA window. */
+button,a,input,select,textarea,summary{transition-timing-function:var(--nova-ease)}
+
+/* Motion off: no transitions, no entry animations, no smooth scrolling anywhere below the root. */
+[data-motion="off"],[data-motion="off"] *{scroll-behavior:auto!important}
+[data-motion="off"] *,[data-motion="off"] *::before,[data-motion="off"] *::after{animation:none!important;transition:none!important}
+
+/* System preference wins over the stored level. */
+@media (prefers-reduced-motion:reduce){
+  [data-motion]{--nova-motion-scale:0}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
