@@ -1,4 +1,5 @@
 import { duplicateKey, safeUrl } from '../command/model'
+import { parseResearchBackup } from './transfer'
 export interface Collection { id:string; name:string; description:string; createdAt:number }
 export interface KnowledgeCard { summary:string; takeaways:string[]; tags:string[]; generatedAt:number }
 export interface SavedPage { id:string; url:string; urlKey:string; title:string; description:string; tags:string[]; notes:string; collectionId:string | null; relatedIds:string[]; card?:KnowledgeCard; createdAt:number; updatedAt:number }
@@ -12,3 +13,40 @@ export async function removeCollection(id:string){await transaction(['collection
 export async function putPage(page:SavedPage){const url=safeUrl(page.url),key=duplicateKey(url);if(!url||!key)throw new Error('Only HTTP(S) URLs without credentials can be saved.');if(!page.title.trim())throw new Error('Enter a title.');const next={...page,url,urlKey:key,title:page.title.trim().slice(0,300),description:page.description.slice(0,2000),tags:[...new Set(page.tags.map(t=>t.trim().slice(0,40)).filter(Boolean))].slice(0,20),notes:page.notes.slice(0,20000),relatedIds:[...new Set(page.relatedIds)].filter(id=>id!==page.id).slice(0,50),updatedAt:Date.now()};await transaction(['pages'],'readwrite',tx=>tx.objectStore('pages').put(next))}
 export const removePage=(id:string)=>transaction(['pages'],'readwrite',tx=>{const store=tx.objectStore('pages'), cursor=store.openCursor();cursor.onsuccess=()=>{const c=cursor.result;if(!c)return;const page=c.value as SavedPage;if(page.id!==id&&page.relatedIds.includes(id))c.update({...page,relatedIds:page.relatedIds.filter(other=>other!==id)});c.continue()};return store.delete(id)})
 export function searchPages(pages:SavedPage[], query:string, collectionId:string|null|'all'='all'){const q=query.trim().toLocaleLowerCase();return pages.filter(page=>(collectionId==='all'||page.collectionId===collectionId)&&(!q||[page.title,page.url,page.description,page.notes,...page.tags,page.card?.summary??'',...(page.card?.takeaways??[])].join(' ').toLocaleLowerCase().includes(q))).sort((a,b)=>b.updatedAt-a.updatedAt)}
+
+/** Merge a validated backup in a single transaction. Existing pages are never overwritten. */
+export async function importResearchBackup(backup: import('./transfer').ResearchBackup): Promise<{ collections: number; pages: number; skipped: number }> {
+  // Revalidate at the storage boundary, even if a future caller bypasses the UI.
+  const validated = parseResearchBackup(JSON.stringify(backup))
+  const db = await open()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['collections', 'pages'], 'readwrite')
+    const collections = tx.objectStore('collections'), pages = tx.objectStore('pages')
+    const existingCollections = collections.getAll(), existingPages = pages.getAll()
+    let result = { collections: 0, pages: 0, skipped: 0 }
+    existingPages.onsuccess = () => {
+      const currentCollections = existingCollections.result as Collection[], currentPages = existingPages.result as SavedPage[]
+      const collectionIds = new Set(currentCollections.map(item => item.id))
+      for (const item of validated.collections) if (!collectionIds.has(item.id)) { collections.add(item); collectionIds.add(item.id); result.collections++ }
+      const usedIds = new Set(currentPages.map(item => item.id))
+      const byUrl = new Map(currentPages.map(item => [item.urlKey, item.id]))
+      const mappedIds = new Map<string, string>()
+      const additions: SavedPage[] = []
+      for (const item of validated.pages) {
+        const duplicate = byUrl.get(item.urlKey)
+        if (duplicate) { mappedIds.set(item.id, duplicate); result.skipped++; continue }
+        let id = item.id
+        while (usedIds.has(id)) id = crypto.randomUUID()
+        usedIds.add(id); byUrl.set(item.urlKey, id); mappedIds.set(item.id, id)
+        additions.push({ ...item, id, collectionId: item.collectionId && collectionIds.has(item.collectionId) ? item.collectionId : null }); result.pages++
+      }
+      for (const item of additions) {
+        const relatedIds = [...new Set(item.relatedIds.map(id => mappedIds.get(id)).filter((id): id is string => !!id && id !== item.id))]
+        pages.add({ ...item, relatedIds })
+      }
+    }
+    tx.oncomplete = () => { db.close(); resolve(result) }
+    tx.onerror = () => { db.close(); reject(tx.error ?? new Error('Import failed. Nothing was changed.')) }
+    tx.onabort = () => { db.close(); reject(tx.error ?? new Error('Import was interrupted. Nothing was changed.')) }
+  })
+}

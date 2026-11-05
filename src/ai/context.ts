@@ -1,5 +1,10 @@
 export const CONTEXT_LIMIT = 24000
-export interface PageContext { title: string; url: string; text: string; kind: 'page' | 'selection'; truncated: boolean }
+export interface PageContext { title: string; url: string; text: string; kind: 'page' | 'selection'; truncated: boolean; sourceTabId: number; sourceHref: string }
+/** Source identity stays in memory only and is never sent to the backend. */
+export function isCurrentContext(context: PageContext, tab: chrome.tabs.Tab): boolean {
+  if (tab.id !== context.sourceTabId || supportedPage(tab) || !tab.url) return false
+  try { const url = new URL(tab.url); url.hash = ''; return url.href === context.sourceHref } catch { return false }
+}
 export function supportedPage(tab: chrome.tabs.Tab): string | null {
   if (tab.incognito) return 'Private tabs cannot be shared with the AI.'
   try {
@@ -68,5 +73,5 @@ export async function capture(tab: chrome.tabs.Tab, kind: 'page' | 'selection', 
   // The active tab may have navigated while the script was running.
   const live = await chrome.tabs.get(tab.id)
   if (supportedPage(live) || supportedPage({ ...live, url: result.url }) || !live.url || (() => { const u = new URL(live.url!); u.hash = ''; return u.href !== result.sourceHref })()) throw new Error('The tab changed. Review the page again.')
-  const { sourceHref: _sourceHref, ...context } = result; return { ...context, kind }
+  return { ...result, kind, sourceTabId: tab.id }
 }
