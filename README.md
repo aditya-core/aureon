@@ -1,6 +1,6 @@
 # NOVA
 
-A local-first Chrome New Tab extension. Days 7–8 add an opt-in AI side panel and local research workspace alongside the existing Command Centre, New Tab Personalisation Studio, productivity workspace and website controls. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verification and limitations.
+A local-first Chrome New Tab extension. Days 7–8 add an opt-in AI side panel and local research workspace; Day 9 adds opt-in automations and Tab Space adds a visual tab manager alongside the existing Command Centre, New Tab Personalisation Studio, productivity workspace and website controls. See [PROJECT_STATUS.md](PROJECT_STATUS.md) for verification and limitations.
 
 ## Development
 
@@ -18,7 +18,7 @@ The package check verifies built extension files; it does not replace a real Chr
 
 ## Lightweight architecture
 
-The new-tab entry loads the settings shell only when Personalize is opened. Advanced Studio, layout controls, profiles and transfer load when their respective sections are selected; workspace widgets load when one is visible. Wallpaper IndexedDB is opened only when an uploaded background is selected or settings needs the saved image. The Command Centre is a separate entry loaded only when opened; browser events update its view while it is open. The MV3 service worker is event-driven, with no polling; website scripts run only on explicit current-tab action or a separately granted site. The build-manifest package test checks the chunk boundaries; it is not a substitute for measuring CPU, memory or startup in Chrome.
+The new-tab entry loads the settings shell only when Personalize is opened. Advanced Studio, layout controls, profiles and transfer load when their respective sections are selected; workspace widgets load when one is visible. Wallpaper IndexedDB is opened only when an uploaded background is selected or settings needs the saved image. Tab Space is a lazy in-page view and suspends browser listeners while hidden; the Command Centre is a separate entry loaded only when opened; browser events update its view while it is open. The MV3 service worker is event-driven, with no polling; website scripts run only on explicit current-tab action or a separately granted site. The build-manifest package test checks the chunk boundaries; it is not a substitute for measuring CPU, memory or startup in Chrome.
 
 ## Load or update in Chrome
 
@@ -26,6 +26,24 @@ The new-tab entry loads the settings shell only when Personalize is opened. Adva
 2. Open `chrome://extensions` and enable **Developer mode**.
 3. For a first install choose **Load unpacked**, then select this project's `dist` folder. If already installed, click NOVA's **reload** button after rebuilding.
 4. Open a fresh new tab. If Chrome asks you to keep the new-tab change, confirm it.
+
+## NOVA Tab Space
+
+Open **Tab Space** from the new-tab header for a theme-aware Gallery or Compact view of normal-window tabs. Search, filter, select, manage native groups, review exact duplicates and save or restore the existing local workspaces. Cleanup never closes or organizes tabs automatically; destructive actions ask for confirmation. No tab screenshots are captured, and private tabs are excluded. The feature reuses existing permissions and Day 6 storage; it adds no history access or host grant.
+
+See [docs/TAB_SPACE.md](docs/TAB_SPACE.md) for architecture, privacy, limitations and an **unexecuted installed-Chrome checklist**. Browser actions have only been exercised using mocked Chrome APIs in this environment; the web preview cannot manage real Chrome tabs. Performance and accessibility require real-browser testing.
+
+## Day 9 — Automations
+
+Open **Explore NOVA → Automations** from a new tab, or open the NOVA toolbar popup on the page you want to use as a source and choose **Automations**. Create a workflow or edit one of four optional templates. Add and reorder actions, preview, save, and run. New automatic triggers are disabled by default. Manual runs remain available even when the automatic trigger is disabled.
+
+The runner uses the existing Command Centre sessions, themes/layouts, focus timer, notes and Research store. It supports opening safe URLs, restoring a session, changing theme/layout, starting focus, creating a note, saving a reviewed source page, showing a notification, waiting and asking for confirmation. Research collection and library actions support the Research Sprint template. A saved workspace with more than 10 tabs requires an approved confirmation step immediately before restoration. Source-page saving is manual-only; open Automations from the popup on that page and review the displayed source.
+
+**Triggers:** manual, an opt-in browser-startup alarm, daily local-time schedule, and one opt-in keyboard-shortcut workflow. Chrome may delay alarms; startup is deferred by at least 30 seconds. Configure the shortcut in `chrome://extensions/shortcuts` (suggested Ctrl+Shift+Y, or Command+Shift+Y on macOS). Grant optional notification permission via **Enable notifications** only if needed. Day 9 adds mandatory `alarms` and optional `notifications`; it adds no new website host access. Chrome may ask for permission review after an update.
+
+One workflow runs at a time; overlapping automatic triggers are recorded as failures, not queued. Pause, resume, cancel and confirmation are available on the dashboard. History retains at most 100 runs. A timeout includes pauses and waits. A stopped, timed-out or interrupted action may already have had effects; review before retrying. In-flight actions are not replayed after a service-worker restart; persisted waits and confirmations can be resumed. Settings and notes can still be last-writer-wins across open tabs: finish editing them before a workflow changes them. Do not use NOVA to automate sensitive submissions; workflows cannot execute arbitrary code.
+
+See [docs/DAY_09_AUTOMATIONS.md](docs/DAY_09_AUTOMATIONS.md) for architecture, limits, security and an **unexecuted installed-Chrome test checklist**. A browser preview cannot run extension automation APIs. Live Chrome startup, alarms, commands, notifications, restart behavior and real-device accessibility require manual verification.
 
 ## Days 7–8 — Assistant and Research
 

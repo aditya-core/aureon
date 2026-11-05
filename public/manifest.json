@@ -11,13 +11,14 @@
     "tabGroups",
     "sessions",
     "favicon",
-    "sidePanel"
+    "sidePanel",
+    "alarms"
   ],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "automation-worker.js"
   },
   "optional_host_permissions": [
     "http://*/*",
@@ -29,5 +30,17 @@
   },
   "side_panel": {
     "default_path": "sidepanel.html"
+  },
+  "optional_permissions": [
+    "notifications"
+  ],
+  "commands": {
+    "run-workflow": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Run the enabled NOVA shortcut workflow"
+    }
   }
 }

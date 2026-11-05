@@ -1,7 +1,20 @@
 # Project status
 
 ## Current phase
-Post-Day-8 product refinement: dashboard and popup discovery, Research backup and source clarity, and Assistant recovery/privacy safeguards added without changing the architecture. Live AI integration and installed-Chrome verification remain incomplete. See `docs/PRODUCT_REFINEMENT.md`; do not claim real provider, browser, network, accessibility, restart or performance verification without executing it.
+Tab Space adds an in-page visual tab manager with shared Day 6 services; its Chrome integration has only mock verification. Day 9 — a separate Automations dashboard and event-driven sequential workflow engine are implemented. Browser startup, alarms, shortcuts, optional notifications and worker restarts are covered by mocks, not verified in an installed Chrome browser. See `docs/DAY_09_AUTOMATIONS.md`; do not claim installed-browser or live AI verification without executing it.
+
+## NOVA Tab Space
+- Lazy in-page Gallery/Compact views inherit theme tokens and use a local mountain banner, favicons and no tab screenshots. Normal tabs only; search, filters, sorting, selection, native operations and grouping reuse Day 6 services.
+- Explicit cleanup preserves URL queries and fragments; no automatic tab closure or organization. Chrome Sessions recovery is separate from saved workspaces.
+- Shared `nova:savedSessions` workspaces gain optional descriptions and user-initiated current/new-window restore with optional exact duplicate skipping. Existing Command Centre and automation defaults remain unchanged. No Tab Space permissions were added.
+- Event-driven listeners are suspended while hidden; fixed-height virtualized tab rows above 60 items and paged cleanup suggestions bound rendered cards. Performance, accessibility and real Chrome behavior are not verified; see `docs/TAB_SPACE.md` for limitations and manual checks.
+
+## Day 9 — Automations
+- Themed dashboard, lazy sequential editor, editable templates, validation, ordering, manual runs, pause/confirmation/cancel, bounded history and explicit retry warning.
+- Opt-in startup, daily local-time alarms and one shortcut workflow. Startup is alarm-deferred; overlapping runs fail visibly in history. Persisted waits/confirmations survive worker wake; interrupted in-flight work fails without automatic replay.
+- Reuses Command Centre sessions, preferences, focus, notes and Research; adds URL, notification, wait and confirmation actions. Saving a source page is manual only; large session restores require explicit approval.
+- Adds `alarms` and optional `notifications`; existing website worker is imported by the new event-driven worker. No arbitrary workflow code or new mandatory host permissions.
+- Limits: alarms can run late; completed side effects cannot be rolled back; cross-tab notes/preferences writes remain last-writer-wins; actual Chrome API behavior and screen-reader accessibility are unverified.
 
 ## Audit and preserved foundation
 - Existing React 19 / strict TypeScript / Vite MV3 new-tab override, search, themes, wallpaper storage, layout presets, settings and idle service worker remain in place. Day 1–4 originally requested only `storage`; Day 5 adds `activeTab`, `scripting` and optional host patterns as described below.
@@ -50,6 +63,8 @@ Post-Day-8 product refinement: dashboard and popup discovery, Research backup an
 - Known gaps: real side-panel opening, Chrome permissions, CORS, favicon behavior, live AI/provider output, browser restart, network/console, keyboard/contrast and resource measurements are not verified here. Stop/cancellation is best-effort upstream; model-generated JSON may be invalid and requires retry. Chrome page and private-site heuristics cannot detect all sensitive data.
 
 ## Verification
+- Tab Space: production build and package checks passed; the Node/jsdom suite uses mocked Chrome APIs, including a 500-tab bounded-render check. Installed Chrome, accessibility and performance profiling remain unverified; see `docs/TAB_SPACE.md`.
+- Day 9: 130 JavaScript unit/jsdom/mocked-Chrome tests passed; production build and 6 package checks passed; npm audit reported 0 vulnerabilities. Six Django tests passed with a fake provider and Django system checks passed. Both preview pages returned HTTP 200. No installed Chrome executable was available.
 - Product refinement: 106 JavaScript unit/jsdom/mocked-Chrome tests and 5 package checks passed; production build and `npm audit` passed (0 vulnerabilities). Six Django tests using a fake provider and Django system checks passed. A development dashboard responded over HTTP; this is not an installed Chrome or live AI test.
 - Days 7–8: 93 JavaScript unit/jsdom/mocked-Chrome tests passed, 6 Django tests passed with a fake provider, production build and 5 package checks passed; `npm audit` reported 0 vulnerabilities. These do not verify an installed extension or real AI provider.
 - Day 1–4 baseline before edits: 43 automated tests, build, 4 package checks passed; npm audit 0 vulnerabilities.
@@ -83,4 +98,4 @@ Post-Day-8 product refinement: dashboard and popup discovery, Research backup an
 ## Next steps
 1. Provision the backend and a real provider account as documented; test live streaming and quotas without exposing secrets.
 2. Load the extension in Chrome and follow the Days 7–8 and prior manual matrices; inspect Console, Network, restart and resource use.
-3. Fix any reported issues and obtain confirmation before Day 9.
+3. Run the Tab Space and Day 9 installed-Chrome checklists, profile performance, and address any issues found.

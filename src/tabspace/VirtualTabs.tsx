@@ -1,0 +1,19 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { TabCard } from './TabCard'
+
+type Props = { tabs:chrome.tabs.Tab[]; groups:chrome.tabGroups.TabGroup[]; view:'gallery'|'compact'; resetKey:string; selected:Set<number>; draggable:boolean; windows:number[]; onSelect:(tab:chrome.tabs.Tab,checked:boolean,shift:boolean)=>void; onAction:(action:string,tab:chrome.tabs.Tab,value?:number)=>void; onDrag:(tab:chrome.tabs.Tab)=>void; onDragEnd:()=>void; onDropTab:(tab:chrome.tabs.Tab,draggedId:string)=>void }
+/** Fixed-height rows keep large collections bounded without a virtualization dependency. */
+export function VirtualTabs(props:Props){
+ const viewport=useRef<HTMLDivElement>(null), [width,setWidth]=useState(750), [scrollTop,setScrollTop]=useState(0), [height,setHeight]=useState(600), pendingFocus=useRef<number|null>(null)
+ const cols=props.view==='gallery'?Math.max(1,Math.min(5,Math.floor((width+14)/235))):1, rowHeight=props.view==='gallery'?216:80
+ const rows=Math.ceil(props.tabs.length/cols), virtual=props.tabs.length>60, start=virtual?Math.max(0,Math.floor(scrollTop/rowHeight)-2):0, end=virtual?Math.min(rows,Math.ceil((scrollTop+height)/rowHeight)+2):rows
+ const hasTabs=props.tabs.length>0
+ const byGroup=useMemo(()=>new Map(props.groups.map(g=>[g.id,g])),[props.groups])
+ useLayoutEffect(()=>{const node=viewport.current;if(!node)return;const measure=()=>{setWidth(node.clientWidth||750);setHeight(node.clientHeight||600)};measure();if(typeof ResizeObserver==='undefined')return;const observer=new ResizeObserver(measure);observer.observe(node);return()=>observer.disconnect()},[hasTabs])
+ useEffect(()=>{if(viewport.current){viewport.current.scrollTop=0;setScrollTop(0)}},[props.view,props.resetKey])
+ useEffect(()=>{const max=Math.max(0,rows*rowHeight-height);if(scrollTop>max&&viewport.current){viewport.current.scrollTop=max;setScrollTop(max)}},[rows,rowHeight,height,scrollTop])
+ useEffect(()=>{if(pendingFocus.current===null)return;const id=pendingFocus.current;const element=viewport.current?.querySelector<HTMLButtonElement>(`[data-tab-id="${id}"]`);if(element){element.focus();pendingFocus.current=null}},[start,end,props.tabs])
+ function arrow(tab:chrome.tabs.Tab,direction:number){const index=props.tabs.findIndex(t=>t.id===tab.id),next=props.tabs[Math.max(0,Math.min(props.tabs.length-1,index+direction))];if(!next||next.id===undefined)return;pendingFocus.current=next.id;const node=viewport.current;if(node){const element=node.querySelector<HTMLButtonElement>(`[data-tab-id="${next.id}"]`);if(element){element.focus();pendingFocus.current=null;return}const row=Math.floor(props.tabs.indexOf(next)/cols),top=row*rowHeight;node.scrollTop=Math.max(0,top-rowHeight);setScrollTop(node.scrollTop)}}
+ if(!props.tabs.length)return <div className="ts-empty"><span>✳</span><strong>Nothing here just yet.</strong><p>Try a different search or filter, or open a browser tab.</p></div>
+ return <div className="ts-viewport" ref={viewport} onScroll={e=>setScrollTop(e.currentTarget.scrollTop)} aria-label="Open tabs"><div style={{height:start*rowHeight}} aria-hidden="true"/>{Array.from({length:end-start},(_,offset)=>{const row=start+offset, items=props.tabs.slice(row*cols,row*cols+cols);return <div className="ts-virtual-row" key={row} style={{height:rowHeight,gridTemplateColumns:`repeat(${cols},minmax(0,1fr))`}}>{items.map(tab=><TabCard key={tab.id} tab={tab} group={byGroup.get(tab.groupId)} view={props.view} selected={tab.id!==undefined&&props.selected.has(tab.id)} draggable={props.draggable} windows={props.windows} groups={props.groups} onSelect={props.onSelect} onAction={props.onAction} onDrag={props.onDrag} onDragEnd={props.onDragEnd} onDropTab={props.onDropTab} onArrow={arrow}/>)}</div>})}<div style={{height:(rows-end)*rowHeight}} aria-hidden="true"/></div>
+}

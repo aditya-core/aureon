@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUpRight, Boxes, Library, Sparkles } from 'lucide-react'
+import { ArrowUpRight, Boxes, Library, Sparkles, Zap } from 'lucide-react'
 
 /** A small, opt-in launcher; feature pages remain separate Vite entries. */
 export function Spaces() {
@@ -30,7 +30,7 @@ export function Spaces() {
   return <div className="spaces" ref={root}>
     <button ref={trigger} className="spaces-trigger" aria-label="Explore NOVA" onClick={() => { setOpen(value => !value); setMessage('') }} aria-expanded={open} aria-controls="nova-spaces"><Boxes size={16}/><span>Explore NOVA</span></button>
     {open && <div id="nova-spaces" className="spaces-panel"><div className="spaces-heading"><span>YOUR NOVA SPACES</span><strong>A little more room to think.</strong></div>
-      {installed ? <nav aria-label="NOVA spaces"><button onClick={openAssistant}><Sparkles size={17}/><span><strong>Assistant</strong><small>Ask, understand, explore</small></span><ArrowUpRight size={15}/></button><a href="./command.html"><Boxes size={17}/><span><strong>Command Centre</strong><small>Organize tabs and sessions</small></span><ArrowUpRight size={15}/></a><a href="./research.html"><Library size={17}/><span><strong>Research library</strong><small>Keep your ideas together</small></span><ArrowUpRight size={15}/></a></nav> : <p className="spaces-hint">Install NOVA in Chrome to open these spaces. Your dashboard preview stays available here.</p>}
+      {installed ? <nav aria-label="NOVA spaces"><button onClick={openAssistant}><Sparkles size={17}/><span><strong>Assistant</strong><small>Ask, understand, explore</small></span><ArrowUpRight size={15}/></button><a href="./command.html"><Boxes size={17}/><span><strong>Command Centre</strong><small>Organize tabs and sessions</small></span><ArrowUpRight size={15}/></a><a href="./automations.html"><Zap size={17}/><span><strong>Automations</strong><small>Build your own routines</small></span><ArrowUpRight size={15}/></a><a href="./research.html"><Library size={17}/><span><strong>Research library</strong><small>Keep your ideas together</small></span><ArrowUpRight size={15}/></a></nav> : <p className="spaces-hint">Install NOVA in Chrome to open these spaces. Your dashboard preview stays available here.</p>}
       {message && <p className="spaces-hint" role="status">{message}</p>}
       <p className="spaces-hint">AI is optional and requires a configured backend. Your research stays local unless you choose to share it.</p>
     </div>}

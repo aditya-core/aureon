@@ -1,5 +1,5 @@
 export interface SavedTab { url: string; title: string; groupName?: string; groupKey?: string; groupColor?: chrome.tabGroups.ColorEnum; pinned?: boolean }
-export interface SavedSession { id: string; name: string; createdAt: number; updatedAt: number; tabs: SavedTab[] }
+export interface SavedSession { id: string; name: string; description?: string; createdAt: number; updatedAt: number; tabs: SavedTab[] }
 export const GROUP_COLORS: chrome.tabGroups.ColorEnum[] = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange']
 export const SUGGESTIONS = ['Work', 'Study', 'Research', 'Entertainment', 'Shopping', 'Personal']
 
@@ -54,5 +54,5 @@ export function normalizeSession(input: unknown): SavedSession | null {
     const groupColor = typeof t.groupColor === 'string' && GROUP_COLORS.includes(t.groupColor as chrome.tabGroups.ColorEnum) ? t.groupColor as chrome.tabGroups.ColorEnum : undefined
     tabs.push({ url, title: typeof t.title === 'string' ? t.title.slice(0, 200) : hostname(url), pinned: t.pinned === true, ...(typeof t.groupName === 'string' && t.groupName.trim() ? { groupName: t.groupName.slice(0, 80), ...(typeof t.groupKey === 'string' && t.groupKey.length <= 80 ? { groupKey: t.groupKey } : {}), groupColor } : {}) })
   }
-  return { id: v.id, name: v.name.trim(), createdAt: v.createdAt, updatedAt: v.updatedAt, tabs }
+  return { id: v.id, name: v.name.trim(), ...(typeof v.description === 'string' ? { description: v.description.slice(0, 500) } : {}), createdAt: v.createdAt, updatedAt: v.updatedAt, tabs }
 }

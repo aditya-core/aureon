@@ -1,6 +1,6 @@
 import { Fragment, lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Settings2, Sparkles } from 'lucide-react'
+import { PanelsTopLeft, Settings2, Sparkles } from 'lucide-react'
 import { Clock } from './components/Clock'
 import { Search } from './components/Search'
 import { Shortcuts } from './components/Shortcuts'
@@ -11,16 +11,22 @@ import { deleteWallpaper, getWallpaper, saveWallpaper } from './lib/wallpaper'
 
 const Settings = lazy(() => import('./components/settings/Settings'))
 const Workspace = lazy(() => import('./components/Workspace').then(module => ({ default: module.Workspace })))
+const TabSpace = lazy(() => import('./tabspace/entry'))
 
 
 export default function App() {
   const { preferences: p, update, status, ready } = usePreferences()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [tabSpaceActive, setTabSpaceActive] = useState(false)
+  const [tabSpaceVisited, setTabSpaceVisited] = useState(false)
+  const openTabSpace = () => { setTabSpaceVisited(true); setTabSpaceActive(true) }
   const [wallpaper, setWallpaper] = useState<Blob | null>(null)
   const [wallpaperReady, setWallpaperReady] = useState(false)
   const [wallpaperError, setWallpaperError] = useState(false)
   const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null)
   const wallpaperVersion = useRef(0)
+  const tabSpaceTrigger = useRef<HTMLButtonElement>(null)
+  const returnHome = useCallback(() => { setTabSpaceActive(false); requestAnimationFrame(() => tabSpaceTrigger.current?.focus()) }, [])
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   useEffect(() => {
     // The default new tab does not need to open IndexedDB. Load the single
@@ -46,9 +52,9 @@ export default function App() {
   return <div className="app" data-theme={p.theme} data-background={p.background} data-layout={p.layout} data-spacing={p.spacing} data-alignment={p.alignment} data-motion={p.reducedMotion ? 'off' : p.animationIntensity} style={styles}>
     <div className="background-layer" aria-hidden="true"/><div className="background-overlay" aria-hidden="true"/>
     {!loaded ? <div className="loading-screen" role="status"><Sparkles size={20}/><span className="sr-only">Loading your space</span></div> : <>
-      <header className="topbar">
+      <div className="home-view" hidden={tabSpaceActive}><header className="topbar">
         <a className="brand" href="./index.html" aria-label="NOVA new tab"><span className="brand-icon"><Sparkles size={16} strokeWidth={1.7}/></span><span>NOVA</span><span className="brand-divider"/><span className="brand-caption">YOUR SPACE TO THINK</span></a>
-        <div className="top-actions"><span className="top-status"><span/> A LITTLE MORE CLARITY, EVERY DAY</span><Spaces/><button className="settings-trigger" onClick={() => setSettingsOpen(true)} aria-label="Open settings"><Settings2 size={17}/><span>Personalize</span></button></div>
+        <div className="top-actions"><span className="top-status"><span/> A LITTLE MORE CLARITY, EVERY DAY</span><Spaces/><button ref={tabSpaceTrigger} className="settings-trigger tabspace-trigger" onClick={openTabSpace} aria-label="Open Tab Space"><PanelsTopLeft size={17}/><span>Tab Space</span></button><button className="settings-trigger" onClick={() => setSettingsOpen(true)} aria-label="Open settings"><Settings2 size={17}/><span>Personalize</span></button></div>
       </header>
       <main className="main"><div className="main-inner">
         <div className="eyebrow"><span className="eyebrow-line"/> A FRESH START <span className="eyebrow-line"/></div>
@@ -59,7 +65,8 @@ export default function App() {
           {section === 'widgets' && (p.visibleWidgets.includes('notes') || p.visibleWidgets.includes('tasks') || p.visibleWidgets.includes('focus')) && <Suspense fallback={<p className="helper" role="status">Loading workspace…</p>}><Workspace visible={p.visibleWidgets} order={p.widgetOrder} sizes={p.widgetSizes}/></Suspense>}
         </Fragment>)}
       </div></main>
-      <footer className="footer"><div><span className="footer-star">✳</span> MADE FOR A MORE MINDFUL INTERNET</div><div className="footer-right"><span className="status-dot"/> ALL YOURS, RIGHT HERE <span className="footer-separator">/</span> NOVA 02</div></footer>
+      <footer className="footer"><div><span className="footer-star">✳</span> MADE FOR A MORE MINDFUL INTERNET</div><div className="footer-right"><span className="status-dot"/> ALL YOURS, RIGHT HERE <span className="footer-separator">/</span> NOVA 02</div></footer></div>
+      {tabSpaceVisited && <Suspense fallback={<div className="loading-screen" role="status">Opening Tab Space…</div>}><TabSpace active={tabSpaceActive} onHome={returnHome} onSettings={() => setSettingsOpen(true)}/></Suspense>}
       {(status === 'error' || (wallpaperError && p.background === 'upload') || (wallpaperReady && !wallpaper && p.background === 'upload')) && <div className="storage-warning" role="status">{status === 'error' ? 'Preferences couldn’t be saved or loaded. Please try again.' : 'Your wallpaper is unavailable. Showing the theme background.'}</div>}
       {settingsOpen && <Suspense fallback={<div className="settings-loading" role="status">Opening settings…</div>}><Settings preferences={p} update={update} status={status} close={closeSettings} upload={upload} removeWallpaper={removeWallpaper} hasWallpaper={!!wallpaper}/></Suspense>}
     </>}
