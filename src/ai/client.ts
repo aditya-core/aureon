@@ -8,8 +8,12 @@ export function backendUrl(input: string): URL {
 }
 export async function streamAI(connection: Connection, mode: Mode, body: object, signal: AbortSignal, onDelta: (text: string) => void) {
   const base = backendUrl(connection.url); base.pathname = base.pathname.replace(/\/$/, '') + `/api/ai/${mode}/`
-  const response = await fetch(base.href, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':`Token ${connection.token}` }, body:JSON.stringify(body), signal, credentials:'omit', cache:'no-store', redirect:'error' })
-  if (!response.ok) { let message = `Server returned ${response.status}.`; try { const data = await response.json(); message = data.error?.message || message } catch { /* no structured error */ } throw new Error(message) }
+  let response: Response
+  try { response = await fetch(base.href, { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':`Token ${connection.token}` }, body:JSON.stringify(body), signal, credentials:'omit', cache:'no-store', redirect:'error' }) } catch (error) {
+    if (signal.aborted) throw error
+    throw new Error('Could not reach your backend. Check the server, address, and extension permissions, then try again.')
+  }
+  if (!response.ok) { let message = response.status === 401 ? 'Authentication failed. Check your NOVA account token in settings.' : `Server returned ${response.status}.`; try { const data = await response.json(); message = data.error?.message || message } catch { /* no structured error */ } throw new Error(message) }
   if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) throw new Error('Server did not return an AI stream.')
   const reader = response.body.getReader(), decoder = new TextDecoder(); let buffer = '', complete = false, length = 0
   try {
@@ -28,7 +32,7 @@ export async function streamAI(connection: Connection, mode: Mode, body: object,
       if (done || complete) break
     }
     if (!complete) throw new Error('AI stream ended unexpectedly.')
-  } finally { reader.releaseLock() }
+  } finally { if (!complete) { try { await reader.cancel() } catch { /* already cancelled */ } } reader.releaseLock() }
 }
 export async function getConnection(): Promise<Connection | null> {
   const data = await chrome.storage.session.get('nova:aiConnection')

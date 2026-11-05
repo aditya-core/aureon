@@ -4,6 +4,7 @@ import { Settings2, Sparkles } from 'lucide-react'
 import { Clock } from './components/Clock'
 import { Search } from './components/Search'
 import { Shortcuts } from './components/Shortcuts'
+import { Spaces } from './components/Spaces'
 import { usePreferences } from './hooks/usePreferences'
 import { themeStyles } from './lib/theme-engine'
 import { deleteWallpaper, getWallpaper, saveWallpaper } from './lib/wallpaper'
@@ -47,7 +48,7 @@ export default function App() {
     {!loaded ? <div className="loading-screen" role="status"><Sparkles size={20}/><span className="sr-only">Loading your space</span></div> : <>
       <header className="topbar">
         <a className="brand" href="./index.html" aria-label="NOVA new tab"><span className="brand-icon"><Sparkles size={16} strokeWidth={1.7}/></span><span>NOVA</span><span className="brand-divider"/><span className="brand-caption">YOUR SPACE TO THINK</span></a>
-        <div className="top-actions"><span className="top-status"><span/> A LITTLE MORE CLARITY, EVERY DAY</span><button className="settings-trigger" onClick={() => setSettingsOpen(true)} aria-label="Open settings"><Settings2 size={17}/><span>Personalize</span></button></div>
+        <div className="top-actions"><span className="top-status"><span/> A LITTLE MORE CLARITY, EVERY DAY</span><Spaces/><button className="settings-trigger" onClick={() => setSettingsOpen(true)} aria-label="Open settings"><Settings2 size={17}/><span>Personalize</span></button></div>
       </header>
       <main className="main"><div className="main-inner">
         <div className="eyebrow"><span className="eyebrow-line"/> A FRESH START <span className="eyebrow-line"/></div>
