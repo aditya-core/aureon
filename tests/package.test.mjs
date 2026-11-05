@@ -11,8 +11,12 @@ test('built MV3 manifest contains the intended new-tab entry and minimal permiss
   const manifest = JSON.parse(await read('manifest.json'))
   assert.equal(manifest.manifest_version, 3)
   assert.equal(manifest.chrome_url_overrides?.newtab, 'index.html')
-  assert.equal(manifest.background?.service_worker, 'background.js')
-  assert.deepEqual(manifest.permissions, ['storage', 'activeTab', 'scripting', 'tabs', 'tabGroups', 'sessions', 'favicon', 'sidePanel'])
+  assert.equal(manifest.background?.service_worker, 'automation-worker.js')
+  assert.deepEqual(manifest.permissions, ['storage', 'activeTab', 'scripting', 'tabs', 'tabGroups', 'sessions', 'favicon', 'sidePanel', 'alarms'])
+  assert.deepEqual(manifest.optional_permissions, ['notifications'])
+  assert.equal(manifest.commands['run-workflow'].suggested_key.default, 'Ctrl+Shift+Y')
+  await access(resolve(dist, 'background.js')); await access(resolve(dist, 'automations.html')); await access(resolve(dist, 'automation-icon.png'))
+  assert.match(await read('automation-worker.js'), /importScripts\(["']background\.js["']\)/)
   assert.deepEqual(manifest.optional_host_permissions, ['http://*/*', 'https://*/*'])
   assert.equal(manifest.action?.default_popup, 'popup.html')
   await access(resolve(dist, manifest.action.default_popup))
@@ -45,6 +49,7 @@ test('bundled wallpaper presets are included in the build', async () => {
   await access(resolve(dist, 'wallpapers/orbit.svg'))
   await access(resolve(dist, 'wallpapers/horizon.svg'))
   await access(resolve(dist, 'wallpapers/grove.svg'))
+  await access(resolve(dist, 'tabspace-horizon.jpg'))
 })
 
 test('studio, settings and workspace are outside the initial static bundle', async () => {
@@ -53,6 +58,7 @@ test('studio, settings and workspace are outside the initial static bundle', asy
   assert.equal(entry?.isEntry, true)
   const settings = 'src/components/settings/Settings.tsx'
   const workspace = 'src/components/Workspace.tsx'
+  const tabspace = 'src/tabspace/entry.tsx'
   const tools = ['AdvancedStudio', 'LayoutStudio', 'Profiles', 'Transfer'].map(name => `src/components/settings/${name}.tsx`)
   const staticImports = new Set()
   function visit(key) {
@@ -62,23 +68,24 @@ test('studio, settings and workspace are outside the initial static bundle', asy
     for (const dependency of manifest[key].imports ?? []) visit(dependency)
   }
   visit('index.html')
-  for (const key of [settings, workspace, ...tools]) {
+  for (const key of [settings, workspace, tabspace, ...tools]) {
     assert.equal(manifest[key]?.isDynamicEntry, true, `${key} must be a separate dynamic entry`)
     assert.ok(!staticImports.has(key), `${key} is eagerly loaded by the initial entry`)
     await access(resolve(dist, manifest[key].file))
   }
   assert.equal(manifest['popup.html']?.isEntry, true)
   assert.equal(manifest['command.html']?.isEntry, true)
-  for (const key of ['sidepanel.html','research.html']) { assert.equal(manifest[key]?.isEntry, true); assert.ok(!staticImports.has(key), `${key} must not load on the new tab`) }
+  for (const key of ['sidepanel.html','research.html','automations.html']) { assert.equal(manifest[key]?.isEntry, true); assert.ok(!staticImports.has(key), `${key} must not load on the new tab`) }
   assert.ok(!staticImports.has('command.html'), 'Command Centre must not load in the new-tab entry')
   assert.ok(!(manifest['popup.html'].imports ?? []).includes('command.html'), 'Command Centre must not load in the popup')
   const popupImports = new Set(manifest['popup.html'].imports ?? [])
   assert.ok(!popupImports.has('index.html'), 'popup must not eagerly load the new-tab entry')
   assert.ok(entry.dynamicImports.includes(settings))
   assert.ok(entry.dynamicImports.includes(workspace))
+  assert.ok(entry.dynamicImports.includes(tabspace))
   for (const key of tools) assert.ok(manifest[settings].dynamicImports.includes(key), `${key} must be loaded on demand from settings`)
   const html = await read('index.html')
-  for (const key of [settings, workspace, ...tools]) assert.ok(!html.includes(manifest[key].file), `${key} must not be preloaded in HTML`)
+  for (const key of [settings, workspace, tabspace, ...tools]) assert.ok(!html.includes(manifest[key].file), `${key} must not be preloaded in HTML`)
 })
 
 
@@ -91,4 +98,11 @@ test('extension bundle does not include provider credentials or provider endpoin
     assert.ok(!source.includes('NOVA_PROVIDER_KEY'), `server environment name leaked in ${file}`)
     assert.ok(!source.includes('api.openai.com'), `direct provider request in ${file}`)
   }
+})
+
+
+test('workflow editor is loaded on demand from the Automations page', async () => {
+  const manifest = JSON.parse(await read('.vite/manifest.json'))
+  assert.equal(manifest['src/automation/WorkflowEditor.tsx']?.isDynamicEntry, true)
+  assert.ok(manifest['automations.html'].dynamicImports.includes('src/automation/WorkflowEditor.tsx'))
 })

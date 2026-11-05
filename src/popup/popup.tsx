@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BookOpen, EyeOff, LayoutGrid, Moon, Settings2, Sparkles, Type, Library } from 'lucide-react'
+import { BookOpen, EyeOff, LayoutGrid, Moon, Settings2, Sparkles, Type, Library, Zap } from 'lucide-react'
 import type { Font, SiteProfile } from '../web/types'
 import { applyProfile, disableAutomatic, enableAutomatic, ensureContent, matchPattern } from '../web/chrome'
 
@@ -110,6 +110,7 @@ export function Popup() {
     <section className="popup-spaces" aria-label="NOVA spaces"><div className="popup-spaces-title"><span>OPEN A SPACE</span><small>Choose where to begin</small></div><div className="popup-space-grid">
       <button className="command-link" disabled={tab?.windowId === undefined} onClick={() => { if (tab?.windowId !== undefined) void chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => setError('Could not open Assistant. Check Chrome side panel support.')) }}><Sparkles size={17}/><span><strong>NOVA Assistant</strong><small>Ask & explain</small></span><span aria-hidden="true">↗</span></button>
       <button className="command-link" onClick={() => { const id = tab?.id; void chrome.tabs.create({ url: chrome.runtime.getURL(`research.html${id === undefined ? '' : `?tab=${id}`}`) }).catch(() => setError('Could not open Research.')) }}><Library size={17}/><span><strong>Research workspace</strong><small>Pages & notes</small></span><span aria-hidden="true">↗</span></button>
+      <button className="command-link" onClick={() => { const id = tab?.id; void chrome.tabs.create({ url: chrome.runtime.getURL(`automations.html${id === undefined ? '' : `?tab=${id}`}`) }).catch(() => setError('Could not open Automations.')) }}><Zap size={17}/><span><strong>Automations</strong><small>Routines & workflows</small></span><span aria-hidden="true">↗</span></button>
       <button className="command-link" onClick={() => { void chrome.tabs.create({ url: chrome.runtime.getURL('command.html') }).catch(() => setError('Could not open Command Centre.')) }}><LayoutGrid size={17}/><span><strong>Command Centre</strong><small>Tabs & sessions</small></span><span aria-hidden="true">↗</span></button>
     </div></section>
     <section className="site"><div><span className="caption">CURRENT WEBSITE</span><strong title={origin ?? ''}>{loading ? 'Finding your page…' : origin ? new URL(origin).host : 'Unsupported page'}</strong><small>{loading ? 'Checking access' : unsupported ? 'Open a regular HTTP or HTTPS page.' : activeStatus}</small></div><span className={`status ${applied ? 'on' : ''}`}/></section>

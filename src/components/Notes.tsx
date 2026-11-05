@@ -4,7 +4,7 @@ import { useLocalList } from '../hooks/useLocalList'
 import { getNotes, saveNotes } from '../lib/storage'
 
 export function Notes() {
-  const { items: notes, change, ready, error } = useLocalList(getNotes, saveNotes, 500)
+  const { items: notes, change, ready, error } = useLocalList(getNotes, saveNotes, 500, 'notes')
   const [selected, setSelected] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   useEffect(() => { if (!selected && notes.length) setSelected(notes[0].id) }, [selected, notes])
