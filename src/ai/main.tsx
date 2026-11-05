@@ -1,3 +1,4 @@
+import '../motion.css'
 import './assistant.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

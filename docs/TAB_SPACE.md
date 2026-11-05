@@ -2,6 +2,12 @@
 
 Tab Space is a lazy, in-page view in the existing new-tab dashboard. Use **Tab Space** in the new-tab header; **Back to NOVA** returns without reloading the dashboard. Its panels inherit the existing theme, surface, accent and background tokens; the local twilight mountain banner is decorative. Gallery cards use Chrome's cached favicon endpoint with a fallback and a generated domain treatment, **not screenshots or page content**. Compact view is an alternative to Gallery; the view choice is stored under `nova:tabspaceView`. Search and other in-page state survive a switch back to Home during the same page lifetime.
 
+## Quick switcher
+
+Use **Switch tabs** in the dashboard header to open a Recent Apps–inspired carousel. It lists open normal Chrome tabs across windows, ordered by Chrome's `lastAccessed` timestamp when available (otherwise browser order). Swipe or use arrows to browse, click a card to switch, and choose **Open Tab Space** for the full manager. Escape closes the dialog. The control uses the existing live Chrome snapshot and the existing tab focus service; it loads only on demand and cleans up listeners when closed. At most five cards are mounted at once. Transitions animate transform and opacity, and respect NOVA's motion-off setting and the system reduced-motion preference.
+
+The cards are decorative and use favicons, not screenshots. Private tabs are excluded. This is a Chrome extension UI, not Samsung's system task switcher: it cannot show native device apps or tabs on other devices. No new permission or background polling is added. Chrome APIs, actual touch behavior, animation smoothness, accessibility and resource usage still require installed-browser testing and profiling.
+
 ## Tabs and groups
 
 The existing Day 6 `useBrowser` service provides an initial Chrome tabs/groups/windows/recent snapshot, consumes Chrome events and rejects stale asynchronous snapshots. It now supports suspending its listeners while Tab Space is hidden and refreshing on return; there is no interval polling. Failed snapshots block actions until Retry. Normal-window tabs only are displayed; incognito tabs are excluded. The existing `tabs`, `tabGroups`, `sessions` and `favicon` permissions are reused. Tab Space adds no permission, website host grant, history database or tab-content capture. Chrome may describe the existing `tabs` permission as access to browsing history.
@@ -30,7 +36,7 @@ Automated coverage uses Node, jsdom and mocked Chrome APIs; production build/pac
 
 ### Manual Chrome checklist — not executed here
 
-1. Run `npm run build`, load or reload `dist` in `chrome://extensions`, and open a normal new tab. Confirm Tab Space navigation, Home state, all four themes, custom colors/background, light/dark contrast, narrow windows and reduced motion.
+1. Run `npm run build`, load or reload `dist` in `chrome://extensions`, and open a normal new tab. Test **Switch tabs** with swipe, arrow keys, Escape, card activation, live tab changes, focus restoration and **Open Tab Space**; verify reduced motion and confirm private tabs are absent. Confirm Tab Space navigation, Home state, all four themes, custom colors/background, light/dark contrast, narrow windows and reduced motion.
 2. In multiple normal windows, create tabs with duplicate and distinct query strings/fragments, pinned/muted/audio tabs, native groups and a private window. Confirm counts and privacy, gallery/compact persistence, search, filters, sorting, keyboard focus, shift selection and live updates from Chrome outside NOVA.
 3. Test activate, confirmed close/close others, pin/unpin, mute/unmute, duplicate, reload, move to an existing/new window and bulk operations. Force a stale tab or API failure and inspect partial results. Exercise native group creation, rename, color, collapse, add/remove, full ungroup and drag/drop restrictions.
 4. Review exact duplicate candidates, changing or closing the keep tab during review. Confirm query/fragment differences are not closed as duplicates, suggestions do not act without permission, and Chrome Recently closed restoration behaves as Chrome permits.

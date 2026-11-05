@@ -4,3 +4,10 @@
 .popup-spaces{margin:0 0 17px}.popup-spaces-title{display:flex;align-items:center;justify-content:space-between;color:#a39ab4;margin:0 0 9px}.popup-spaces-title span{font-size:9px;letter-spacing:.14em;font-weight:700}.popup-spaces-title small{font-size:10px}.popup-space-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.popup-space-grid .command-link{position:relative;margin:0;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:11px;min-height:104px}.popup-space-grid .command-link>svg{color:#cfb9f7}.popup-space-grid .command-link>span:nth-child(2){flex:1;min-width:0}.popup-space-grid .command-link strong{line-height:1.3}.popup-space-grid .command-link small{line-height:1.3}.popup-space-grid .command-link>span:last-child{position:absolute;right:10px;top:8px;color:#b3aabd}.popup-space-grid .command-link:hover{border-color:#c9b5ff;background:#30273e}.hero{padding:18px 0 16px}
 
 .popup-space-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.popup-space-grid .command-link{min-height:88px}
+
+/* Popup motion: the switch and the space buttons only. The popup itself opens with the browser's own motion. */
+.popup button,.popup .toggle input{transition:background-color var(--nova-t-fast) var(--nova-ease),border-color var(--nova-t-fast) var(--nova-ease),color var(--nova-t-fast) var(--nova-ease),transform var(--nova-t-fast) var(--nova-ease-out)}
+.popup .toggle input:after{transition:transform var(--nova-t-fast) var(--nova-ease-spring)}
+.popup .command-link:hover{transform:translateY(-1px);border-color:#a58bd4;background:#322a40}
+.popup .command-link:active{transform:scale(.99)}
+.popup .apply-current:hover{transform:translateY(-1px)}

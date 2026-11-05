@@ -3,6 +3,15 @@
 ## Current phase
 Tab Space adds an in-page visual tab manager with shared Day 6 services; its Chrome integration has only mock verification. Day 9 — a separate Automations dashboard and event-driven sequential workflow engine are implemented. Browser startup, alarms, shortcuts, optional notifications and worker restarts are covered by mocks, not verified in an installed Chrome browser. See `docs/DAY_09_AUTOMATIONS.md`; do not claim installed-browser or live AI verification without executing it.
 
+## Motion layer
+- `src/motion.css` holds the shared timing/easing tokens and both off switches; `src/lib/motion.ts` maps `animationIntensity`/`reducedMotion` to one `data-motion` value and subscribes to preference changes. All six pages, the switcher and Tab Space load it.
+- Command, Automations, Research, Assistant and the popup now carry `data-motion`; panels, cards, buttons, the switcher deck and Tab Space cards use the tokens. Streaming answers, virtualized rows and scroll positions are never animated, and there are no blanket `transition: all` rules.
+- Verified by mocked DOM tests and static/source checks plus the build; animation smoothness and frame timing have not been profiled in a real browser.
+
+## Quick tab switcher
+- A lazy, Samsung Recent Apps–inspired carousel opens from the new-tab dashboard and expands into Tab Space. It uses the existing live browser snapshot, mounts at most five cards and respects reduced motion. Private tabs and screenshots are excluded; native Android apps and other devices are outside extension access.
+- Mocked Chrome/jsdom interactions and package checks pass; installed Chrome touch behavior, real accessibility and animation/resource performance remain unverified.
+
 ## NOVA Tab Space
 - Lazy in-page Gallery/Compact views inherit theme tokens and use a local mountain banner, favicons and no tab screenshots. Normal tabs only; search, filters, sorting, selection, native operations and grouping reuse Day 6 services.
 - Explicit cleanup preserves URL queries and fragments; no automatic tab closure or organization. Chrome Sessions recovery is separate from saved workspaces.
@@ -63,6 +72,7 @@ Tab Space adds an in-page visual tab manager with shared Day 6 services; its Chr
 - Known gaps: real side-panel opening, Chrome permissions, CORS, favicon behavior, live AI/provider output, browser restart, network/console, keyboard/contrast and resource measurements are not verified here. Stop/cancellation is best-effort upstream; model-generated JSON may be invalid and requires retry. Chrome page and private-site heuristics cannot detect all sensitive data.
 
 ## Verification
+- Motion layer: 169 JavaScript unit/jsdom/mocked-Chrome tests and 7 package checks passed; production build and `npm audit` (0 vulnerabilities) passed. Tests cover preference mapping, live `chrome.storage.onChanged` propagation, reduced-motion collapse, root `data-motion` attributes, shared-token usage, absence of blanket transitions and the one-stylesheet-per-page build. No browser was available, so animation smoothness, frame timing and touch feel are unverified.
 - Tab Space: production build and package checks passed; the Node/jsdom suite uses mocked Chrome APIs, including a 500-tab bounded-render check. Installed Chrome, accessibility and performance profiling remain unverified; see `docs/TAB_SPACE.md`.
 - Day 9: 130 JavaScript unit/jsdom/mocked-Chrome tests passed; production build and 6 package checks passed; npm audit reported 0 vulnerabilities. Six Django tests passed with a fake provider and Django system checks passed. Both preview pages returned HTTP 200. No installed Chrome executable was available.
 - Product refinement: 106 JavaScript unit/jsdom/mocked-Chrome tests and 5 package checks passed; production build and `npm audit` passed (0 vulnerabilities). Six Django tests using a fake provider and Django system checks passed. A development dashboard responded over HTTP; this is not an installed Chrome or live AI test.

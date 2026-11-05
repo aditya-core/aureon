@@ -29,9 +29,20 @@ The new-tab entry loads the settings shell only when Personalize is opened. Adva
 
 ## NOVA Tab Space
 
+Use **Switch tabs** in the new-tab header for a Samsung Recent Apps–inspired carousel of open normal Chrome tabs. Swipe or use the arrow keys, choose a card to switch, or select **Open Tab Space** for the full manager. Cards use favicons and decorative artwork, not screenshots; private tabs are excluded. Chrome tabs only are shown—not Android apps or tabs on other devices.
+
 Open **Tab Space** from the new-tab header for a theme-aware Gallery or Compact view of normal-window tabs. Search, filter, select, manage native groups, review exact duplicates and save or restore the existing local workspaces. Cleanup never closes or organizes tabs automatically; destructive actions ask for confirmation. No tab screenshots are captured, and private tabs are excluded. The feature reuses existing permissions and Day 6 storage; it adds no history access or host grant.
 
 See [docs/TAB_SPACE.md](docs/TAB_SPACE.md) for architecture, privacy, limitations and an **unexecuted installed-Chrome checklist**. Browser actions have only been exercised using mocked Chrome APIs in this environment; the web preview cannot manage real Chrome tabs. Performance and accessibility require real-browser testing.
+
+## Motion and transitions
+
+Every NOVA window — new tab, Command Centre, Automations, Research, Assistant, the toolbar popup, the tab switcher and Tab Space — shares one motion layer (`src/motion.css`) so interactions settle on the same short curve instead of each screen inventing its own timing.
+
+- Transitions run at 100ms (hover/press), 150ms (state changes), 220ms (panels and cards) and 300ms (surface entrances). Only colour, border, shadow, opacity and transform are animated, so moving elements stay on the compositor; layout, scrolling and virtualized content never animate.
+- The **Motion** setting in Settings still offers Off / Subtle / Standard / Expressive. Each level scales the same tokens (×1, ×1.2, ×1.45) rather than adding new effects, and the choice now reaches every surface, including the popup. A saved change propagates to open surfaces through `chrome.storage.onChanged`.
+- **Reduce motion** (the setting or `prefers-reduced-motion`) collapses the scale to zero and disables entrance animations everywhere, including the switcher and Tab Space. Streaming Assistant answers are deliberately never animated.
+- No animation library or new dependency is used, and no frame-rate, latency or device-parity claim is made: timings are design values, not measurements. Real profiling still needs an installed Chrome browser.
 
 ## Day 9 — Automations
 

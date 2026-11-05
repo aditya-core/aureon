@@ -2,3 +2,14 @@
 @media(max-width:850px){.sidebar{width:200px}.main-content{padding-top:36px}.head-actions{justify-content:flex-end}.tab-badges .badge:not(.active){display:none}}
 @media(max-width:650px){.command-shell{display:block}.sidebar{width:auto;min-height:0;padding:18px;border-right:0;border-bottom:1px solid var(--edge)}.sidebar-label,.sidebar-note{display:none}.command-brand{margin-bottom:16px}nav{flex-direction:row;overflow:auto}nav button{flex:none;padding:9px!important;gap:6px}nav button small{display:none}.topline{height:54px;padding:0 18px}.main-content{padding:30px 18px}.page-intro h1{font-size:38px}.intro-symbol{font-size:45px}.stats{margin:26px 0 35px;gap:7px}.stats>div{padding:15px 11px}.stats strong{font-size:23px}.stats span{font-size:8px}.stats small{font-size:10px}.panel-head{display:block}.head-actions{justify-content:flex-start;margin-top:14px}.tab-row{gap:8px;padding:11px 9px}.tab-badges{display:none}.tab-icon{width:27px;height:27px}.duplicate-card{align-items:flex-start;flex-direction:column}.duplicate-card>div{width:100%}.group-row{flex-wrap:wrap}.group-row>div{min-width:55%}.command-footer{font-size:8px}.command-footer span:last-child{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+
+/* Command motion: short colour/border answers, one entrance for the content column, no layout animation. */
+.command-shell button,.command-shell select,.command-shell input{transition:background-color var(--nova-t-fast) var(--nova-ease),border-color var(--nova-t-fast) var(--nova-ease),color var(--nova-t-fast) var(--nova-ease),transform var(--nova-t-fast) var(--nova-ease-out)}
+.command-shell nav button{transition:background-color var(--nova-t-fast) var(--nova-ease),color var(--nova-t-fast) var(--nova-ease),border-color var(--nova-t-fast) var(--nova-ease)}
+.tab-card,.panel,.duplicate-card,.workspace-card,.stats>div,.search-box,.feedback{transition:border-color var(--nova-t-fast) var(--nova-ease),background-color var(--nova-t-fast) var(--nova-ease),box-shadow var(--nova-t-base) var(--nova-ease)}
+.tab-card:hover,.duplicate-card:hover,.workspace-card:hover{border-color:color-mix(in srgb,var(--panel-accent) 35%,transparent);box-shadow:0 8px 24px #0003}
+.tab-open strong{transition:color var(--nova-t-fast) var(--nova-ease)}
+.tab-open:hover strong{color:var(--panel-accent)}
+.command-shell .primary:active:not(:disabled){transform:scale(.98)}
+.main-content{animation:cmd-arrive var(--nova-t-enter) var(--nova-ease-out) both}
+@keyframes cmd-arrive{from{opacity:0;transform:translateY(var(--nova-rise))}to{opacity:1;transform:none}}
